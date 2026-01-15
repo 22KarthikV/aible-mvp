@@ -23,7 +23,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Helper function to check connection
 export const testSupabaseConnection = async () => {
   try {
-    const { data, error } = await supabase.from("profiles").select("count");
+    // Use underscore prefix to indicate intentionally unused variable
+    const { error } = await supabase.from("profiles").select("count");
 
     if (error) {
       console.error("Supabase connection error:", error);
