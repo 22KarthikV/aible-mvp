@@ -37,7 +37,7 @@ export default function TestPage() {
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-green-600 mb-2">
-            🥗 Aible MVP
+            🥗 Aible MVP - Dev
           </h1>
           <p className="text-gray-500 text-sm">Development Environment Test</p>
         </div>
