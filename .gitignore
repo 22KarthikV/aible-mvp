@@ -9,6 +9,13 @@
 # claude files
 .claude
 
+# Gemini/AI temp files
+.gemini/
+.gemini-clipboard/
+
+# Windows error files
+nul
+
 # Credentials backup
 *credentials*.txt
 aible-credentials.txt

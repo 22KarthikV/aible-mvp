@@ -1,8 +1,132 @@
+/**
+ * ==========================================
+ * AIBLE TYPOGRAPHY DESIGN SYSTEM
+ * ==========================================
+ *
+ * GUIDING PRINCIPLE:
+ * "Aible" brand name MUST be the most prominent text element
+ * across the entire application to establish brand identity.
+ *
+ * ==========================================
+ * TYPE SCALE HIERARCHY
+ * ==========================================
+ *
+ * BRAND/HERO DISPLAY:
+ * - Brand name "Aible": text-6xl lg:text-7xl (60-72px)
+ *   Font Weight: font-black (900)
+ *   Usage: App logo/brand name in headers
+ *   Special: tracking-tight for professional appearance
+ *
+ * HEADINGS:
+ * - H1 (Page titles): text-4xl lg:text-5xl (36-48px)
+ *   Font Weight: font-bold (700)
+ *   Usage: Main page headings, hero sections
+ *
+ * - H2 (Major sections): text-2xl sm:text-3xl (24-30px)
+ *   Font Weight: font-bold (700)
+ *   Usage: Section titles, welcome messages
+ *
+ * - H3 (Subsections): text-xl (20px)
+ *   Font Weight: font-bold (700) or font-semibold (600)
+ *   Usage: Card titles, major subsections
+ *
+ * - H4 (Minor headings): text-lg (18px)
+ *   Font Weight: font-bold (700) or font-semibold (600)
+ *   Usage: Feature titles, list item headings
+ *
+ * BODY TEXT:
+ * - Large body: text-lg (18px)
+ *   Font Weight: font-medium (500) or font-normal (400)
+ *   Usage: Important descriptions, emphasized content
+ *
+ * - Standard body: text-base (16px)
+ *   Font Weight: font-normal (400) or font-medium (500)
+ *   Usage: Default paragraph text, standard UI text
+ *
+ * - Small body: text-sm (14px)
+ *   Font Weight: font-normal (400) or font-medium (500)
+ *   Usage: Secondary information, helper text
+ *
+ * - Caption/Label: text-xs (12px)
+ *   Font Weight: font-medium (500) or font-bold (700)
+ *   Usage: Labels, badges, metadata, timestamps
+ *
+ * ==========================================
+ * FONT WEIGHT STRATEGY
+ * ==========================================
+ *
+ * - font-black (900): RESERVED for "Aible" brand name ONLY
+ *   Creates maximum visual distinction for brand identity
+ *
+ * - font-bold (700): Headings, important UI elements, CTA buttons
+ *
+ * - font-semibold (600): Subheadings, emphasized text, navigation
+ *
+ * - font-medium (500): Body emphasis, labels, secondary headings
+ *
+ * - font-normal (400): Standard body text, descriptions
+ *
+ * ==========================================
+ * RESPONSIVE TYPOGRAPHY
+ * ==========================================
+ *
+ * MOBILE-FIRST APPROACH:
+ * - Start with mobile sizes (base)
+ * - Scale up for tablets (sm:)
+ * - Enhance for desktop (lg:, xl:)
+ *
+ * BREAKPOINTS:
+ * - Mobile: 0-640px (default, no prefix)
+ * - Tablet: 640px+ (sm:)
+ * - Desktop: 1024px+ (lg:)
+ * - Large: 1280px+ (xl:)
+ *
+ * EXAMPLE PATTERNS:
+ * - Brand: text-5xl sm:text-6xl lg:text-7xl
+ * - Headings: text-2xl sm:text-3xl lg:text-4xl
+ * - Body: text-sm sm:text-base lg:text-lg
+ *
+ * ==========================================
+ * IMPLEMENTATION CHECKLIST
+ * ==========================================
+ *
+ * ✅ Brand name "Aible" uses text-6xl/7xl + font-black
+ * ✅ Page headings smaller than brand (text-3xl/4xl)
+ * ✅ Clear hierarchy: Brand > H1 > H2 > H3 > Body
+ * ✅ Consistent sizing across all pages
+ * ✅ Proper responsive scaling
+ * ✅ Font weights reinforce hierarchy
+ * ✅ Readable at all viewport sizes
+ * ✅ Professional, polished appearance
+ *
+ * ==========================================
+ * PAGE-SPECIFIC IMPLEMENTATIONS
+ * ==========================================
+ *
+ * LOGIN PAGE (src/pages/Login.tsx):
+ * - Desktop "Aible": text-6xl lg:text-7xl font-black
+ * - Mobile "Aible": text-5xl sm:text-6xl font-black
+ * - Tagline: text-3xl lg:text-4xl font-bold
+ * - Features: text-lg font-bold (headings)
+ *
+ * DASHBOARD (src/pages/Dashboard.tsx):
+ * - Header "Aible": text-5xl lg:text-6xl font-black
+ * - Welcome message: text-2xl sm:text-3xl font-bold
+ * - Section headings: text-xl font-bold
+ * - Stats: text-3xl font-bold (numbers)
+ *
+ * PROFILE (src/pages/Profile.tsx):
+ * - Header "Aible": text-5xl lg:text-6xl font-black
+ * - Page title: text-2xl sm:text-3xl font-bold
+ * - User name: text-3xl font-bold
+ * - Section headings: text-xl font-bold
+ *
+ * ==========================================
+ */
+
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
 }
 
 .logo {
