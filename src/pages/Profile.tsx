@@ -8,7 +8,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import {
-  User as UserIcon,
   Mail,
   LogOut,
   ArrowLeft,

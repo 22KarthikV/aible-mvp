@@ -1067,8 +1067,8 @@ export function hasDietaryRestriction(
  * Check if recipe matches user dietary restrictions
  */
 export function matchesDietaryRestrictions(
-  recipe: Recipe,
-  restrictions: DietaryRestriction[]
+  _recipe: Recipe,
+  _restrictions: DietaryRestriction[]
 ): boolean {
   // This is a simplified check - in reality, you'd need to analyze ingredients
   // For now, return true (implement logic based on recipe tags/ingredients)
@@ -1112,80 +1112,3 @@ export function calculateCompatibilityScore(
 
   return Math.max(0, Math.min(100, score));
 }
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-/**
- * Export all types for convenience
- */
-export type {
-  // Base utility types
-  UUID,
-  Timestamp,
-  TimestampFields,
-  CreatedAtField,
-  UserReference,
-  // Complex field types
-  RecipeIngredient,
-  RecipeInstruction,
-  NutritionalInfo,
-  // Table types
-  Profile,
-  InventoryItem,
-  Recipe,
-  UserRecipe,
-  ShoppingList,
-  ShoppingListItem,
-  RecipeHistory,
-  Notification,
-  GeminiRequest,
-  GeminiCache,
-  AIRecipeFeedback,
-  SafetyFlag,
-  UserPreferences,
-  IngredientSubstitution,
-  // Input types
-  ProfileInput,
-  InventoryItemInput,
-  RecipeInput,
-  UserRecipeInput,
-  ShoppingListInput,
-  ShoppingListItemInput,
-  RecipeHistoryInput,
-  NotificationInput,
-  GeminiRequestInput,
-  GeminiCacheInput,
-  AIRecipeFeedbackInput,
-  SafetyFlagInput,
-  UserPreferencesInput,
-  IngredientSubstitutionInput,
-  // Update types
-  ProfileUpdate,
-  InventoryItemUpdate,
-  RecipeUpdate,
-  UserRecipeUpdate,
-  ShoppingListUpdate,
-  ShoppingListItemUpdate,
-  NotificationUpdate,
-  SafetyFlagUpdate,
-  UserPreferencesUpdate,
-  IngredientSubstitutionUpdate,
-  // Extended types
-  InventoryItemWithStatus,
-  RecipeWithMetadata,
-  RecipeWithUserContext,
-  ShoppingListWithItems,
-  ShoppingListItemWithRecipe,
-  RecipeHistoryWithRecipe,
-  NotificationWithDetails,
-  SafetyFlagWithRecipe,
-  SubstitutionSuggestion,
-  // Stats types
-  UserDashboardSummary,
-  GeminiRequestStats,
-  GeminiCacheStats,
-  AIRecipeFeedbackStats,
-  SafetyStats,
-};
