@@ -23,15 +23,66 @@ import {
   ChefHat,
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, subDays } from 'date-fns';
 import Footer from '../components/Footer';
+import { useInventoryStore } from '../stores/inventoryStore';
+import { fetchInventoryItems } from '../services/inventoryService';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [imageError, setImageError] = useState<{ [key: string]: boolean }>({});
-  
+
+  // Get inventory state from Zustand store
+  const { items, setItems, loading, setLoading, setError } = useInventoryStore();
+
+  /**
+   * Fetch real-time inventory data from Supabase
+   * Runs on component mount and caches result in Zustand store
+   */
+  useEffect(() => {
+    const loadInventoryData = async () => {
+      if (!user?.id) return;
+
+      // Only fetch if we don't have cached data
+      if (items.length === 0 && !loading) {
+        setLoading(true);
+        try {
+          const { data: fetchedItems, error: fetchError } = await fetchInventoryItems(user.id);
+          if (fetchError) {
+            setError(fetchError);
+          } else if (fetchedItems) {
+            setItems(fetchedItems);
+          }
+        } catch (err) {
+          console.error('Failed to fetch inventory data:', err);
+          setError('Failed to load inventory data');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadInventoryData();
+  }, [user?.id, items.length, loading, setItems, setLoading, setError]);
+
+  /**
+   * Calculate real-time stats from inventory data
+   * Uses cached data from Zustand store for performance
+   */
+  const inventoryCount = items.length;
+  const recipesCount = 0; // TODO: Implement when recipe feature is added
+  const shoppingListCount = 0; // TODO: Implement when shopping list feature is added
+
+  /**
+   * Calculate items added in last 7 days
+   */
+  const itemsAddedLast7Days = useMemo(() => {
+    const sevenDaysAgo = subDays(new Date(), 7);
+    return items.filter(item => new Date(item.created_at) >= sevenDaysAgo).length;
+  }, [items]);
+
   // Real metrics calculation
   const getActiveDays = () => {
     if (!user?.created_at) return 1;
@@ -361,29 +412,33 @@ export default function Profile() {
                    </div>
                  </div>
 
-                 {/* Stats Grid - Staggered Animations */}
+                 {/* Stats Grid - Real-time data from Supabase */}
                  <div className="grid grid-cols-2 gap-3">
+                    {/* Total Inventory Items - Real-time from DB */}
                     <div className="bg-white rounded-2xl p-4 border border-emerald-50 shadow-sm hover:shadow-md hover:border-emerald-200 hover:-translate-y-1 transition-all duration-300">
                       <p className="text-xs text-emerald-500 font-bold uppercase tracking-tight mb-1">Total Items</p>
                       <div className="flex items-end gap-1">
-                        <span className="text-2xl font-bold text-emerald-900">0</span>
+                        <span className="text-2xl font-bold text-emerald-900">{loading ? '...' : inventoryCount}</span>
                         <span className="text-xs text-emerald-400 font-medium mb-1">items</span>
                       </div>
                     </div>
+                    {/* Saved Recipes - Coming in Sprint 4 */}
                     <div className="bg-white rounded-2xl p-4 border border-emerald-50 shadow-sm hover:shadow-md hover:border-emerald-200 hover:-translate-y-1 transition-all duration-300 delay-75">
                       <p className="text-xs text-emerald-500 font-bold uppercase tracking-tight mb-1">Saved Recipes</p>
                        <div className="flex items-end gap-1">
-                        <span className="text-2xl font-bold text-emerald-900">0</span>
+                        <span className="text-2xl font-bold text-emerald-900">{recipesCount}</span>
                         <span className="text-xs text-emerald-400 font-medium mb-1">saved</span>
                       </div>
                     </div>
+                    {/* Shopping List - Coming in Sprint 6 */}
                      <div className="bg-white rounded-2xl p-4 border border-emerald-50 shadow-sm hover:shadow-md hover:border-emerald-200 hover:-translate-y-1 transition-all duration-300 delay-100">
                       <p className="text-xs text-emerald-500 font-bold uppercase tracking-tight mb-1">Shopping</p>
                        <div className="flex items-end gap-1">
-                        <span className="text-2xl font-bold text-emerald-900">0</span>
+                        <span className="text-2xl font-bold text-emerald-900">{shoppingListCount}</span>
                         <span className="text-xs text-emerald-400 font-medium mb-1">items</span>
                       </div>
                     </div>
+                    {/* Active Days - Calculated from account creation date */}
                      <div className="bg-white rounded-2xl p-4 border border-emerald-50 shadow-sm hover:shadow-md hover:border-emerald-200 hover:-translate-y-1 transition-all duration-300 delay-150">
                       <p className="text-xs text-emerald-500 font-bold uppercase tracking-tight mb-1">Active Days</p>
                        <div className="flex items-end gap-1">
@@ -403,7 +458,7 @@ export default function Profile() {
                 </h4>
                 
                 <div className="space-y-4">
-                  {/* Activity Item 1 */}
+                  {/* Activity Item 1 - Items Added (Real-time from DB) */}
                   <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50/50 hover:bg-emerald-50 hover:scale-[1.02] border border-transparent hover:border-emerald-100 transition-all duration-300 group">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-emerald-600 shadow-sm group-hover:bg-emerald-500 group-hover:text-white transition-colors">
@@ -414,10 +469,10 @@ export default function Profile() {
                          <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Last 7 days</p>
                       </div>
                     </div>
-                    <span className="text-xl font-bold text-emerald-700">0</span>
+                    <span className="text-xl font-bold text-emerald-700">{loading ? '...' : itemsAddedLast7Days}</span>
                   </div>
-                  
-                  {/* Activity Item 2 */}
+
+                  {/* Activity Item 2 - Recipes Created (Coming in Sprint 4) */}
                   <div className="flex items-center justify-between p-3.5 rounded-2xl bg-blue-50/30 hover:bg-blue-50 hover:scale-[1.02] border border-transparent hover:border-blue-100 transition-all duration-300 group">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm group-hover:bg-blue-500 group-hover:text-white transition-colors">

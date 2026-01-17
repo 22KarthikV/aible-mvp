@@ -20,13 +20,56 @@ import {
   Menu,
   ChefHat,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Footer from '../components/Footer';
+import { useInventoryStore } from '../stores/inventoryStore';
+import { fetchInventoryItems } from '../services/inventoryService';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  // Get inventory state from Zustand store
+  const { items, setItems, loading, setLoading, setError } = useInventoryStore();
+
+  /**
+   * Fetch real-time inventory count from Supabase
+   * Runs on component mount and caches result in Zustand store
+   */
+  useEffect(() => {
+    const loadInventoryCount = async () => {
+      if (!user?.id) return;
+
+      // Only fetch if we don't have cached data
+      if (items.length === 0 && !loading) {
+        setLoading(true);
+        try {
+          const { data: fetchedItems, error: fetchError } = await fetchInventoryItems(user.id);
+          if (fetchError) {
+            setError(fetchError);
+          } else if (fetchedItems) {
+            setItems(fetchedItems);
+          }
+        } catch (err) {
+          console.error('Failed to fetch inventory count:', err);
+          setError('Failed to load inventory data');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadInventoryCount();
+  }, [user?.id, items.length, loading, setItems, setLoading, setError]);
+
+  /**
+   * Calculate real-time stats from inventory data
+   * Uses cached data from Zustand store for performance
+   */
+  const inventoryCount = items.length;
+  const recipesCount = 0; // TODO: Implement when recipe feature is added
+  const shoppingListCount = 0; // TODO: Implement when shopping list feature is added
 
   /**
    * Handle sign out
@@ -188,36 +231,38 @@ export default function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10">
-          {/* Stat Card 1: Items in Inventory */}
+          {/* Stat Card 1: Items in Inventory - Real-time count from Supabase */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-fade-in-up animation-delay-200 group">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center group-hover:bg-emerald-500 transition-colors duration-300">
                 <Package className="w-6 h-6 text-emerald-600 group-hover:text-white" />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-1">0</h3>
+            <h3 className="text-3xl font-bold text-gray-900 mb-1">
+              {loading ? '...' : inventoryCount}
+            </h3>
             <p className="text-sm font-medium text-emerald-700">Items in Inventory</p>
           </div>
 
-          {/* Stat Card 2: Recipes Saved */}
+          {/* Stat Card 2: Recipes Saved - Coming in Sprint 4 */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-fade-in-up animation-delay-300 group">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-500 transition-colors duration-300">
                 <BookOpen className="w-6 h-6 text-blue-600 group-hover:text-white" />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-1">0</h3>
+            <h3 className="text-3xl font-bold text-gray-900 mb-1">{recipesCount}</h3>
             <p className="text-sm font-medium text-blue-700">Recipes Saved</p>
           </div>
 
-          {/* Stat Card 3: Shopping List Items */}
+          {/* Stat Card 3: Shopping List Items - Coming in Sprint 6 */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-fade-in-up animation-delay-400 group">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center group-hover:bg-orange-500 transition-colors duration-300">
                 <List className="w-6 h-6 text-orange-600 group-hover:text-white" />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-1">0</h3>
+            <h3 className="text-3xl font-bold text-gray-900 mb-1">{shoppingListCount}</h3>
             <p className="text-sm font-medium text-orange-700">Shopping List Items</p>
           </div>
         </div>
