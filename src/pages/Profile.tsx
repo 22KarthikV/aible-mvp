@@ -23,13 +23,15 @@ import {
   ClipboardList,
   ChefHat,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { differenceInDays } from 'date-fns';
+import Footer from '../components/Footer';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [imageError, setImageError] = useState<{ [key: string]: boolean }>({});
   
   // Real metrics calculation
   const getActiveDays = () => {
@@ -78,6 +80,18 @@ export default function Profile() {
     return user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   };
 
+  const getInitials = () => {
+    const name = getFullName();
+    const names = name.split(' ');
+    if (names.length >= 2) {
+      return `${names[0][0]}${names[1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const profilePictureUrl = useMemo(() => getProfilePicture(), [user?.user_metadata]);
+  const hasImageError = imageError[profilePictureUrl || ''] || false;
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 relative overflow-x-hidden flex flex-col">
       {/* Background Pattern Overlay */}
@@ -120,7 +134,7 @@ export default function Profile() {
                   <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
                     <ChefHat className="w-6 h-6 text-white" strokeWidth={2.5} />
                   </div>
-                  <h1 className="text-3xl font-bold hidden sm:block animate-shine">Aible</h1>
+                  <h1 className="text-5xl lg:text-6xl font-black tracking-tight hidden sm:block animate-shine">Aible</h1>
                 </button>
               </div>
 
@@ -130,15 +144,18 @@ export default function Profile() {
                   className="flex items-center gap-3 hover:bg-emerald-50 rounded-xl px-3 py-1.5 transition-colors cursor-pointer border border-transparent hover:border-emerald-100"
                 >
                   <div className="flex items-center gap-3 text-left">
-                    {getProfilePicture() ? (
+                    {profilePictureUrl && !hasImageError ? (
                       <img
-                        src={getProfilePicture()}
+                        src={profilePictureUrl}
                         alt="Profile"
-                        className="w-9 h-9 rounded-full border border-emerald-200"
+                        className="w-9 h-9 rounded-full border border-emerald-200 object-cover"
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                        onError={() => setImageError(prev => ({ ...prev, [profilePictureUrl]: true }))}
                       />
                     ) : (
-                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
-                        <UserIcon className="w-5 h-5 text-emerald-600" />
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center border border-emerald-200 shadow-sm">
+                        <span className="text-white font-bold text-xs">{getInitials()}</span>
                       </div>
                     )}
                     <div className="text-sm">
@@ -162,15 +179,18 @@ export default function Profile() {
           {showMobileMenu && (
             <div className="md:hidden py-4 px-4 border-t border-emerald-100 bg-white/90 rounded-b-2xl">
               <div className="flex items-center gap-3 mb-4">
-                {getProfilePicture() ? (
+                {profilePictureUrl && !hasImageError ? (
                   <img
-                    src={getProfilePicture()}
+                    src={profilePictureUrl}
                     alt="Profile"
-                    className="w-12 h-12 rounded-full border-2 border-emerald-200"
+                    className="w-12 h-12 rounded-full border-2 border-emerald-200 object-cover"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    onError={() => setImageError(prev => ({ ...prev, [profilePictureUrl]: true }))}
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <UserIcon className="w-6 h-6 text-emerald-600" />
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center border-2 border-emerald-200 shadow-sm">
+                    <span className="text-white font-bold text-sm">{getInitials()}</span>
                   </div>
                 )}
                 <div className="text-sm">
@@ -193,7 +213,7 @@ export default function Profile() {
       {/* Main Content */}
       <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 relative z-10">
         <div className="mb-8 animate-fade-in">
-          <h2 className="text-3xl font-bold text-emerald-900 mb-2 animate-slide-in-left">Profile</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-emerald-900 mb-2 animate-slide-in-left">Profile</h2>
           <p className="text-emerald-700 animate-slide-in-left animation-delay-100 font-medium">Manage your account settings and preferences</p>
         </div>
 
@@ -210,19 +230,22 @@ export default function Profile() {
               <div className="px-6 pb-8">
                 {/* Profile Picture */}
                 <div className="flex items-start gap-6 -mt-16 mb-8">
-                  {getProfilePicture() ? (
+                  {profilePictureUrl && !hasImageError ? (
                     <img
-                      src={getProfilePicture()}
+                      src={profilePictureUrl}
                       alt="Profile"
-                      className="w-32 h-32 rounded-full border-4 border-white shadow-xl hover:scale-105 transition-transform duration-300"
+                      className="w-32 h-32 rounded-full border-4 border-white shadow-xl hover:scale-105 transition-transform duration-300 object-cover"
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
+                      onError={() => setImageError(prev => ({ ...prev, [profilePictureUrl]: true }))}
                     />
                   ) : (
-                    <div className="w-32 h-32 rounded-full border-4 border-white bg-emerald-100 flex items-center justify-center shadow-xl hover:scale-105 transition-transform duration-300">
-                      <UserIcon className="w-16 h-16 text-emerald-600" />
+                    <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-xl hover:scale-105 transition-transform duration-300">
+                      <span className="text-white font-bold text-4xl">{getInitials()}</span>
                     </div>
                   )}
                   <div className="flex-1 pt-20">
-                    <h3 className="text-2xl font-bold text-emerald-900 mb-1">{getFullName()}</h3>
+                    <h3 className="text-3xl font-bold text-emerald-900 mb-1">{getFullName()}</h3>
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                         Pro User
@@ -262,7 +285,7 @@ export default function Profile() {
                 
                  {/* Quick Actions */}
                 <div className="mt-10">
-                   <h4 className="text-lg font-bold text-emerald-900 mb-6 flex items-center gap-2">
+                   <h4 className="text-xl font-bold text-emerald-900 mb-6 flex items-center gap-2">
                     <ClipboardList className="w-5 h-5 text-emerald-600" />
                     Quick Actions
                   </h4>
@@ -312,7 +335,7 @@ export default function Profile() {
             {/* Real-Time Status Card - Animated */}
             <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-sm border border-emerald-100 p-6 relative overflow-hidden group hover:shadow-md transition-all duration-500">
                <div className="flex items-center justify-between mb-6">
-                 <h4 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
+                 <h4 className="text-xl font-bold text-emerald-900 flex items-center gap-2">
                    <BarChart3 className="w-5 h-5 text-emerald-600" />
                    Real-Time Metrics
                  </h4>
@@ -375,7 +398,7 @@ export default function Profile() {
 
             {/* Weekly Activity */}
              <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-sm border border-emerald-100 p-6 hover:shadow-md transition-all duration-300">
-                <h4 className="text-lg font-bold text-emerald-900 mb-6 flex items-center gap-2">
+                <h4 className="text-xl font-bold text-emerald-900 mb-6 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-emerald-600" />
                   Weekly Activity
                 </h4>
@@ -453,11 +476,7 @@ export default function Profile() {
         </div>
 
         {/* Footer - Minimal & Integrated */}
-        <footer className="mt-auto py-8 text-center border-t border-emerald-100/50">
-          <p className="text-sm font-medium text-emerald-800/60">
-            &copy; 2026 Aible &bull; Your AI-Powered Kitchen Assistant
-          </p>
-        </footer>
+        <Footer />
       </main>
     </div>
   );

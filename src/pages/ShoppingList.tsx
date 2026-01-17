@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Footer from '../components/Footer';
 
 interface ShoppingItem {
   id: string;
@@ -115,7 +116,7 @@ export default function ShoppingList() {
                   <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
                     <ChefHat className="w-6 h-6 text-white" strokeWidth={2.5} />
                   </div>
-                  <h1 className="text-3xl font-bold hidden sm:block animate-shine">
+                  <h1 className="text-5xl lg:text-6xl font-black tracking-tight hidden sm:block animate-shine">
                     Aible
                   </h1>
                 </button>
@@ -131,6 +132,8 @@ export default function ShoppingList() {
                       src={getProfilePicture()}
                       alt="Profile"
                       className="w-9 h-9 rounded-full border border-emerald-200"
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
                     />
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -162,6 +165,8 @@ export default function ShoppingList() {
                     src={getProfilePicture()}
                     alt="Profile"
                     className="w-12 h-12 rounded-full border-2 border-emerald-200"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -191,7 +196,7 @@ export default function ShoppingList() {
         <div className="mb-8 animate-fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-8">
             <div className="animate-slide-in-left">
-              <h2 className="text-3xl font-bold text-emerald-900 mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-900 mb-2">
                 Shopping List
               </h2>
               <p className="text-emerald-700 font-medium opacity-80">
@@ -314,13 +319,8 @@ export default function ShoppingList() {
             </div>
           </div>
         )}
-
         {/* Footer - Minimal & Integrated */}
-        <footer className="mt-auto py-8 text-center border-t border-emerald-100/50">
-          <p className="text-sm font-medium text-emerald-800/60">
-            &copy; 2026 Aible &bull; Your AI-Powered Kitchen Assistant
-          </p>
-        </footer>
+        <Footer />
       </main>
     </div>
   );

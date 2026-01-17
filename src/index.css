@@ -100,6 +100,22 @@ body {
   animation: shimmer 2.5s ease-in-out 1;
 }
 
+/* White variant for shine animation (for dark backgrounds) */
+.text-white.animate-shine {
+  background: linear-gradient(
+    to right,
+    #ffffff 20%,
+    #d1fae5 50%,
+    #ffffff 80%
+  );
+  background-size: 200% auto;
+  color: #ffffff;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: background-position 0.5s ease;
+}
+
 /* Animation Delays */
 .animation-delay-100 {
   animation-delay: 0.1s;
@@ -180,4 +196,85 @@ body {
 
 .group:hover .animate-cart-drive {
   animation: drive 1.5s ease-in-out infinite;
+}
+
+/* Login Button Animations */
+@keyframes spin-once {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shine-horizontal {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.spin-once {
+  animation: spin-once 1s ease-in-out;
+}
+
+.shine-horizontal {
+  background: linear-gradient(
+    90deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.8) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: shine-horizontal 1s ease-in-out;
+}
+
+/* Google Logo Hover Animation - 3D Rotate + Glow */
+@keyframes google-logo-hover {
+  0% {
+    transform: rotateY(0deg) scale(1);
+    filter: drop-shadow(0 0 0px rgba(66, 133, 244, 0));
+  }
+  50% {
+    transform: rotateY(180deg) scale(1.15);
+    filter: drop-shadow(0 0 12px rgba(66, 133, 244, 0.8));
+  }
+  100% {
+    transform: rotateY(360deg) scale(1);
+    filter: drop-shadow(0 0 0px rgba(66, 133, 244, 0));
+  }
+}
+
+.google-logo-hover {
+  transition: all 0.3s ease;
+}
+
+.group:hover .google-logo-hover {
+  animation: google-logo-hover 0.8s ease-in-out;
+}
+
+/* Wave Animations */
+@keyframes wave-float {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(-5px) scaleY(1.05); }
+}
+
+.animate-wave-slow {
+  animation: wave-float 6s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+.animate-wave-medium {
+  animation: wave-float 4s ease-in-out infinite;
+  animation-delay: 1s;
+  transform-origin: bottom;
+}
+
+.animate-wave-fast {
+  animation: wave-float 3s ease-in-out infinite;
+  animation-delay: 2s;
+  transform-origin: bottom;
 }

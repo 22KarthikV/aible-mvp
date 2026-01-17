@@ -21,6 +21,7 @@ import {
   ChefHat,
 } from 'lucide-react';
 import { useState } from 'react';
+import Footer from '../components/Footer';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -94,7 +95,7 @@ export default function Dashboard() {
                 <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
                   <ChefHat className="w-6 h-6 text-white" strokeWidth={2.5} />
                 </div>
-                <h1 className="text-3xl font-bold hidden sm:block animate-shine">
+                <h1 className="text-5xl lg:text-6xl font-black tracking-tight hidden sm:block animate-shine">
                   Aible
                 </h1>
               </button>
@@ -110,6 +111,8 @@ export default function Dashboard() {
                       src={getProfilePicture()}
                       alt="Profile"
                       className="w-9 h-9 rounded-full border border-emerald-200"
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
                     />
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -146,6 +149,8 @@ export default function Dashboard() {
                     src={getProfilePicture()}
                     alt="Profile"
                     className="w-12 h-12 rounded-full border-2 border-emerald-200"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -173,7 +178,7 @@ export default function Dashboard() {
       <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 relative z-10">
         {/* Welcome Section */}
         <div className="mb-8 animate-fade-in">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2 animate-slide-in-left">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 animate-slide-in-left">
             Welcome back, {getFirstName()}!
           </h2>
           <p className="text-gray-600 animate-slide-in-left animation-delay-100 font-medium">
@@ -309,13 +314,8 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-
         {/* Footer - Minimal & Integrated */}
-        <footer className="mt-12 py-6 relative z-10 w-full text-center">
-          <p className="text-sm text-emerald-700/80">
-            &copy; 2026 Aible - Your AI-Powered Kitchen Assistant
-          </p>
-        </footer>
+        <Footer />
       </main>
     </div>
   );
