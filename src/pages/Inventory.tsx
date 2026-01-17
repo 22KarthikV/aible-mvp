@@ -17,11 +17,11 @@ import {
   Search,
   ArrowLeft,
   Sparkles,
-  ShoppingCart,
   ChefHat,
   Loader2,
   AlertCircle,
   Filter,
+  Receipt,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Footer from '../components/Footer';
@@ -30,6 +30,8 @@ import AddInventoryItemModal from '../components/AddInventoryItemModal';
 import EditInventoryItemModal from '../components/EditInventoryItemModal';
 import InventoryFilters from '../components/InventoryFilters';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
+import ReceiptScannerModal from '../components/ReceiptScannerModal';
+import ReceiptItemReview from '../components/ReceiptItemReview';
 import { useInventoryStore } from '../stores/inventoryStore';
 import {
   fetchInventoryItems,
@@ -45,6 +47,7 @@ import type {
   CreateInventoryItemFormData,
   UpdateInventoryItemFormData,
 } from '../schemas/inventorySchemas';
+import type { ParsedReceipt } from '../services/receiptOCRService';
 
 export default function Inventory() {
   const { user, signOut } = useAuth();
@@ -56,10 +59,12 @@ export default function Inventory() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showScannerModal, setShowScannerModal] = useState(false);
+  const [showReceiptScannerModal, setShowReceiptScannerModal] = useState(false);
+  const [showReceiptReviewModal, setShowReceiptReviewModal] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItemWithStatus | null>(
     null
   );
-  // const [scannedBarcode, setScannedBarcode] = useState<string | null>(null);
+  const [receiptData, setReceiptData] = useState<ParsedReceipt | null>(null);
 
   // Inventory Store
   const {
@@ -202,9 +207,72 @@ export default function Inventory() {
    * Handle barcode scan success
    */
   const handleBarcodeScan = (_barcode: string) => {
-    // Future: pre-fill the add modal with barcode
-    // setScannedBarcode(barcode);
+    // Open add modal (future: pre-fill with barcode)
     setShowAddModal(true);
+  };
+
+  /**
+   * Handle product data from barcode scanner
+   */
+  const handleBarcodeProductData = (_productData: {
+    name: string;
+    category: string;
+    barcode: string;
+    image_url: string | null;
+  }) => {
+    // Open add modal (future: pre-fill with product data)
+    setShowAddModal(true);
+  };
+
+  /**
+   * Handle receipt processed
+   */
+  const handleReceiptProcessed = (receipt: ParsedReceipt, _imageData: string) => {
+    setReceiptData(receipt);
+    setShowReceiptScannerModal(false);
+    setShowReceiptReviewModal(true);
+  };
+
+  /**
+   * Handle batch add from receipt
+   */
+  const handleBatchAddFromReceipt = async (
+    items: Array<CreateInventoryItemFormData & { user_id: UUID }>
+  ) => {
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const itemData of items) {
+      // Ensure undefined values are converted to null
+      const cleanedData = {
+        ...itemData,
+        expiry_date: itemData.expiry_date || null,
+        purchase_date: itemData.purchase_date || null,
+        barcode: itemData.barcode || null,
+        image_url: itemData.image_url || null,
+        notes: itemData.notes || null,
+      };
+
+      const { data: newItem, error } = await createInventoryItem(cleanedData);
+
+      if (error) {
+        console.error(`Failed to add item ${itemData.name}:`, error);
+        errorCount++;
+      } else if (newItem) {
+        addItemToStore(newItem);
+        successCount++;
+      }
+    }
+
+    if (errorCount > 0) {
+      alert(
+        `Added ${successCount} items successfully. ${errorCount} items failed to add.`
+      );
+    }
+
+    // Reset receipt state
+    setReceiptData(null);
+    setShowReceiptReviewModal(false);
   };
 
   /**
@@ -484,7 +552,7 @@ export default function Inventory() {
                 Your inventory is empty
               </h3>
               <p className="text-emerald-700 text-base sm:text-lg mb-8 max-w-md mx-auto leading-relaxed animate-fade-in-up animation-delay-700 font-medium opacity-80">
-                Start tracking your kitchen items by adding them manually or scanning barcodes
+                Start tracking your kitchen items by adding them manually, scanning barcodes, or uploading receipts
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up animation-delay-800">
                 <button
@@ -492,14 +560,21 @@ export default function Inventory() {
                   className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl hover:shadow-emerald-500/30 hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-emerald-200 cursor-pointer"
                 >
                   <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-                  <span>Add Item Manually</span>
+                  <span>Add Item</span>
                 </button>
                 <button
                   onClick={() => setShowScannerModal(true)}
-                  className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/80 backdrop-blur-sm border-2 border-emerald-300 text-emerald-700 font-bold rounded-xl shadow-md hover:shadow-xl hover:bg-emerald-50 hover:border-emerald-400 hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-emerald-200 cursor-pointer"
+                  className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/80 backdrop-blur-sm border-2 border-blue-300 text-blue-700 font-bold rounded-xl shadow-md hover:shadow-xl hover:bg-blue-50 hover:border-blue-400 hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-200 cursor-pointer"
                 >
                   <Scan className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
                   <span>Scan Barcode</span>
+                </button>
+                <button
+                  onClick={() => setShowReceiptScannerModal(true)}
+                  className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/80 backdrop-blur-sm border-2 border-purple-300 text-purple-700 font-bold rounded-xl shadow-md hover:shadow-xl hover:bg-purple-50 hover:border-purple-400 hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-purple-200 cursor-pointer"
+                >
+                  <Receipt className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                  <span>Scan Receipt</span>
                 </button>
               </div>
             </div>
@@ -546,7 +621,7 @@ export default function Inventory() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {/* Action 1: Add Item */}
             <button
-              onClick={() => alert('Add Item feature coming soon!')}
+              onClick={() => setShowAddModal(true)}
               className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-50 p-6 hover:shadow-xl hover:border-emerald-400 hover:scale-[1.02] transition-all duration-300 text-left group focus:outline-none focus:ring-4 focus:ring-emerald-100 animate-fade-in-up animation-delay-600"
             >
               <div className="w-14 h-14 bg-emerald-100 group-hover:bg-emerald-500 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-90">
@@ -572,31 +647,31 @@ export default function Inventory() {
               </p>
             </button>
 
-            {/* Action 3: Generate Recipe */}
+            {/* Action 3: Scan Receipt */}
             <button
-              onClick={() => navigate('/recipes')}
+              onClick={() => setShowReceiptScannerModal(true)}
               className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-50 p-6 hover:shadow-xl hover:border-purple-400 hover:scale-[1.02] transition-all duration-300 text-left group focus:outline-none focus:ring-4 focus:ring-purple-100 animate-fade-in-up animation-delay-800"
             >
               <div className="w-14 h-14 bg-purple-100 group-hover:bg-purple-500 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110">
-                <Sparkles className="w-7 h-7 text-purple-600 group-hover:text-white transition-colors duration-300" strokeWidth={2.5} />
+                <Receipt className="w-7 h-7 text-purple-600 group-hover:text-white transition-colors duration-300" strokeWidth={2.5} />
+              </div>
+              <h4 className="text-lg font-bold text-gray-900 mb-1">Scan Receipt</h4>
+              <p className="text-sm text-gray-600">
+                Batch add from receipt
+              </p>
+            </button>
+
+            {/* Action 4: Generate Recipe */}
+            <button
+              onClick={() => navigate('/recipes')}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-50 p-6 hover:shadow-xl hover:border-pink-400 hover:scale-[1.02] transition-all duration-300 text-left group focus:outline-none focus:ring-4 focus:ring-pink-100 animate-fade-in-up animation-delay-900"
+            >
+              <div className="w-14 h-14 bg-pink-100 group-hover:bg-pink-500 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110">
+                <Sparkles className="w-7 h-7 text-pink-600 group-hover:text-white transition-colors duration-300" strokeWidth={2.5} />
               </div>
               <h4 className="text-lg font-bold text-gray-900 mb-1">Generate Recipe</h4>
               <p className="text-sm text-gray-600">
                 AI-powered suggestions
-              </p>
-            </button>
-
-            {/* Action 4: Shopping List */}
-            <button
-              onClick={() => navigate('/shopping-list')}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-50 p-6 hover:shadow-xl hover:border-orange-400 hover:scale-[1.02] transition-all duration-300 text-left group focus:outline-none focus:ring-4 focus:ring-orange-200 animate-fade-in-up animation-delay-900"
-            >
-              <div className="w-14 h-14 bg-orange-100 group-hover:bg-orange-500 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110">
-                <ShoppingCart className="w-7 h-7 text-orange-600 group-hover:text-white transition-colors duration-300" strokeWidth={2.5} />
-              </div>
-              <h4 className="text-lg font-bold text-gray-900 mb-1">Shopping List</h4>
-              <p className="text-sm text-gray-600">
-                Manage your list
               </p>
             </button>
           </div>
@@ -622,7 +697,6 @@ export default function Inventory() {
             isOpen={showAddModal}
             onClose={() => {
               setShowAddModal(false);
-              // setScannedBarcode(null);
             }}
             onAdd={handleAddItem}
             userId={user.id}
@@ -640,6 +714,23 @@ export default function Inventory() {
             isOpen={showScannerModal}
             onClose={() => setShowScannerModal(false)}
             onScanSuccess={handleBarcodeScan}
+            onAddProduct={handleBarcodeProductData}
+            userId={user.id}
+          />
+          <ReceiptScannerModal
+            isOpen={showReceiptScannerModal}
+            onClose={() => setShowReceiptScannerModal(false)}
+            onReceiptProcessed={handleReceiptProcessed}
+          />
+          <ReceiptItemReview
+            isOpen={showReceiptReviewModal}
+            onClose={() => {
+              setShowReceiptReviewModal(false);
+              setReceiptData(null);
+            }}
+            receiptData={receiptData}
+            onBatchAdd={handleBatchAddFromReceipt}
+            userId={user.id}
           />
         </>
       )}
