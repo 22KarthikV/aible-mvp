@@ -879,6 +879,60 @@ export interface SubstitutionSuggestion {
 }
 
 // ============================================================================
+// TABLE 15: USER_BUDGETS
+// ============================================================================
+
+/**
+ * User spending budget configuration
+ *
+ * Settings for the Financial Health dashboard to track
+ * spending against monthly limits.
+ *
+ * Primary Key: id
+ * Foreign Keys: user_id -> profiles.id (unique)
+ */
+export interface UserBudget extends TimestampFields {
+  id: UUID;
+  user_id: UUID;
+  monthly_limit: number;
+  currency: string;
+  alert_threshold: number; // percentage (e.g. 80)
+  rollover_savings: boolean;
+  budget_start_day: number;
+}
+
+export type UserBudgetInput = Omit<UserBudget, "id" | "created_at" | "updated_at">;
+export type UserBudgetUpdate = Partial<UserBudgetInput>;
+
+// ============================================================================
+// TABLE 16: TRANSACTIONS
+// ============================================================================
+
+/**
+ * Financial transactions (Receipts)
+ *
+ * Logs spending history derived from scanned receipts
+ * or manual entry for financial analysis.
+ *
+ * Primary Key: id
+ * Foreign Keys: user_id -> profiles.id
+ */
+export interface Transaction extends TimestampFields, UserReference {
+  id: UUID;
+  store_name: string;
+  transaction_date: string; // YYYY-MM-DD
+  total_amount: number;
+  currency: string;
+  category_breakdown: Record<string, number>; // { "dairy": 12.50 }
+  receipt_image_path?: string | null;
+  is_verified: boolean;
+  source: 'scan' | 'manual' | 'import';
+}
+
+export type TransactionInput = Omit<Transaction, "id" | "created_at" | "updated_at">;
+export type TransactionUpdate = Partial<Omit<TransactionInput, "user_id">>;
+
+// ============================================================================
 // DATABASE VIEWS AND AGGREGATES
 // ============================================================================
 

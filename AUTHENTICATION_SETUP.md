@@ -481,6 +481,20 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 2. Verify Google OAuth credentials in Supabase
 3. Ensure authorized redirect URIs are correct in Google Cloud Console
 
+### ⚠️ Vercel / Preview Deployment Redirects to Localhost
+
+**Problem**: When signing in from a Vercel preview link (e.g., `https://project-git-dev.vercel.app`), you are redirected to `localhost`.
+
+**Cause**: Supabase rejects the redirect URL because it's not in the **Redirect URLs** allowlist, so it falls back to the default **Site URL** (usually localhost).
+
+**Solution**:
+1. Go to **Supabase Dashboard** > **Authentication** > **URL Configuration**.
+2. Add your Vercel deployment URLs to **Redirect URLs**.
+   - **Specific**: `https://aible-mvp-git-dev-karthik-vetrivels-projects.vercel.app/**`
+   - **Wildcard** (Recommended for Vercel): `https://*-karthik-vetrivels-projects.vercel.app/**`
+3. Click **Save**.
+4. **Wait 1-2 minutes** for changes to propagate.
+
 ### Session Not Persisting
 
 **Problem**: User is signed out after page refresh

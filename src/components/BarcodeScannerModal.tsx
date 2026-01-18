@@ -95,6 +95,9 @@ export default function BarcodeScannerModal({
             console.log('Barcode scanned:', barcodeText);
             setScannedCode(barcodeText);
             setIsScanning(false);
+            
+            // Stop camera immediately
+            codeReader.reset();
 
             // Look up product information
             await lookupProduct(barcodeText);
