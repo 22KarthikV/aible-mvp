@@ -22,10 +22,14 @@ import {
   AlertCircle,
   Filter,
   Receipt,
+  LayoutGrid,
+  List as ListIcon,
+  Layers,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Footer from '../components/Footer';
 import InventoryItemCard from '../components/InventoryItemCard';
+import InventoryGroupedList from '../components/InventoryGroupedList';
 import AddInventoryItemModal from '../components/AddInventoryItemModal';
 import EditInventoryItemModal from '../components/EditInventoryItemModal';
 import InventoryFilters from '../components/InventoryFilters';
@@ -39,6 +43,7 @@ import {
   updateInventoryItem,
   deleteInventoryItem,
 } from '../services/inventoryService';
+import { createTransaction } from '../services/transactionService';
 import type {
   InventoryItemWithStatus,
   UUID,
@@ -65,6 +70,32 @@ export default function Inventory() {
     null
   );
   const [receiptData, setReceiptData] = useState<ParsedReceipt | null>(null);
+  const [scannedProductData, setScannedProductData] = useState<{
+    name: string;
+    category: string;
+    barcode: string;
+    image_url: string | null;
+  } | null>(null);
+
+  // View Preferences
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    const saved = localStorage.getItem('inventoryViewMode');
+    return (saved === 'grid' || saved === 'list') ? saved : 'grid';
+  });
+  
+  const [groupBy, setGroupBy] = useState<'none' | 'category' | 'location'>(() => {
+    const saved = localStorage.getItem('inventoryGroupBy');
+    return (saved === 'none' || saved === 'category' || saved === 'location') ? saved : 'none';
+  });
+
+  // Persist preferences
+  useEffect(() => {
+    localStorage.setItem('inventoryViewMode', viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem('inventoryGroupBy', groupBy);
+  }, [groupBy]);
 
   // Inventory Store
   const {
@@ -214,14 +245,15 @@ export default function Inventory() {
   /**
    * Handle product data from barcode scanner
    */
-  const handleBarcodeProductData = (_productData: {
+  const handleBarcodeProductData = (productData: {
     name: string;
     category: string;
     barcode: string;
     image_url: string | null;
   }) => {
-    // Open add modal (future: pre-fill with product data)
+    setScannedProductData(productData);
     setShowAddModal(true);
+    setShowScannerModal(false);
   };
 
   /**
@@ -261,6 +293,45 @@ export default function Inventory() {
       } else if (newItem) {
         addItemToStore(newItem);
         successCount++;
+      }
+    }
+
+    // Log transaction if items were added
+    if (successCount > 0) {
+      try {
+        const categoryBreakdown: Record<string, number> = {};
+        let calculatedTotal = 0;
+        
+        items.forEach((item) => {
+          let price = 0;
+          // Try to parse price from notes (e.g. "Price: $12.99")
+          if (item.notes) {
+            const match = item.notes.match(/Price: [^0-9]*([\d.]+)/);
+            if (match) {
+              price = parseFloat(match[1]);
+            }
+          }
+          
+          const cat = item.category || 'other';
+          categoryBreakdown[cat] = (categoryBreakdown[cat] || 0) + price;
+          calculatedTotal += price;
+        });
+
+        // Use calculated total if > 0, otherwise fallback to receipt total if available
+        const finalTotal = calculatedTotal > 0 ? calculatedTotal : (receiptData?.totalAmount || 0);
+
+        await createTransaction({
+          user_id: items[0].user_id,
+          store_name: receiptData?.storeName || 'Unknown Store',
+          transaction_date: receiptData?.date || new Date().toISOString().split('T')[0],
+          total_amount: finalTotal,
+          currency: 'GBP',
+          category_breakdown: categoryBreakdown,
+          is_verified: true,
+          source: 'scan',
+        });
+      } catch (err) {
+        console.error('Error creating transaction log:', err);
       }
     }
 
@@ -440,8 +511,7 @@ export default function Inventory() {
 
         {/* Search and Filter Bar */}
         <div className="mb-8 animate-fade-in animation-delay-300">
-          {/* Search and Filter Button Row */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             {/* Search Input */}
             <div className="flex-1 relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500 group-focus-within:text-emerald-600 transition-colors" />
@@ -454,26 +524,67 @@ export default function Inventory() {
               />
             </div>
 
-            {/* Filter Toggle Button - Now inline with search */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white border border-emerald-200/50 text-emerald-700 font-bold rounded-2xl hover:bg-emerald-50 hover:border-emerald-300 shadow-sm transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-100 whitespace-nowrap"
-            >
-              <Filter className="w-5 h-5" />
-              <span>Filters</span>
-              {(selectedCategory || selectedLocation || showExpiredOnly || showExpiringSoon) && (
-                <span className="ml-1 px-2 py-0.5 bg-emerald-500 text-white text-xs font-bold rounded-full">
-                  {
-                    [
-                      selectedCategory !== null,
-                      selectedLocation !== null,
-                      showExpiredOnly,
-                      showExpiringSoon,
-                    ].filter(Boolean).length
-                  }
-                </span>
-              )}
-            </button>
+            {/* Controls Row on Mobile / Inline on Desktop */}
+            <div className="flex gap-3 overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
+              {/* View Mode Toggle */}
+              <div className="flex items-center bg-white border border-emerald-200/50 rounded-2xl p-1.5 shadow-sm flex-shrink-0">
+                <div className="flex bg-gray-100/80 rounded-xl p-1">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'grid' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200/50'}`}
+                    title="Grid View"
+                  >
+                    <LayoutGrid className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200/50'}`}
+                    title="List View"
+                  >
+                    <ListIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Group By Dropdown */}
+              <div className="flex items-center px-4 bg-white border border-emerald-200/50 rounded-2xl shadow-sm flex-shrink-0">
+                <Layers className="w-5 h-5 text-emerald-500 mr-2" />
+                <select
+                  value={groupBy}
+                  onChange={(e) => setGroupBy(e.target.value as any)}
+                  className="bg-transparent py-3.5 text-sm font-bold text-gray-600 focus:outline-none cursor-pointer hover:text-emerald-700 min-w-[100px]"
+                >
+                  <option value="none">No Grouping</option>
+                  <option value="location">Group by Location</option>
+                  <option value="category">Group by Category</option>
+                </select>
+              </div>
+
+              {/* Filter Button */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center justify-center gap-2 px-6 py-3.5 border font-bold rounded-2xl shadow-sm transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-100 whitespace-nowrap flex-shrink-0 ${
+                  showFilters || selectedCategory || selectedLocation || showExpiredOnly || showExpiringSoon
+                    ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                    : 'bg-white text-emerald-700 border-emerald-200/50 hover:bg-emerald-50 hover:border-emerald-300'
+                }`}
+              >
+                <Filter className="w-5 h-5" />
+                <span>Filters</span>
+                {(selectedCategory || selectedLocation || showExpiredOnly || showExpiringSoon) && (
+                  <span className="ml-1 px-2 py-0.5 bg-white/20 text-white text-xs font-bold rounded-full">
+                    {
+                      [
+                        selectedCategory !== null,
+                        selectedLocation !== null,
+                        showExpiredOnly,
+                        showExpiringSoon,
+                      ].filter(Boolean).length
+                    }
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Collapsible Filters Panel */}
@@ -598,18 +709,15 @@ export default function Inventory() {
           </div>
         )}
 
-        {/* Inventory Grid */}
+        {/* Inventory List / Grid */}
         {!loading && !error && filteredItems.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-            {filteredItems.map((item) => (
-              <InventoryItemCard
-                key={item.id}
-                item={item}
-                onEdit={handleEditItem}
-                onDelete={handleDeleteItem}
-              />
-            ))}
-          </div>
+          <InventoryGroupedList
+            items={filteredItems}
+            viewMode={viewMode}
+            groupBy={groupBy}
+            onEdit={handleEditItem}
+            onDelete={handleDeleteItem}
+          />
         )}
 
         {/* Quick Actions */}
@@ -697,9 +805,11 @@ export default function Inventory() {
             isOpen={showAddModal}
             onClose={() => {
               setShowAddModal(false);
+              setScannedProductData(null);
             }}
             onAdd={handleAddItem}
             userId={user.id}
+            initialData={scannedProductData}
           />
           <EditInventoryItemModal
             isOpen={showEditModal}
