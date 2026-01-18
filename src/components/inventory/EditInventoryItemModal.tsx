@@ -15,8 +15,8 @@ import {
   CATEGORY_OPTIONS,
   UNIT_OPTIONS,
   LOCATION_OPTIONS,
-} from '../schemas/inventorySchemas';
-import type { InventoryItemWithStatus, UUID } from '../types/database';
+} from '../../schemas/inventorySchemas';
+import type { InventoryItemWithStatus, UUID } from '../../types/database';
 
 interface EditInventoryItemModalProps {
   isOpen: boolean;

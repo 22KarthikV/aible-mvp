@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  PieChart, 
-  AlertCircle,
+import {
+  TrendingUp,
+  PieChart,
   Calendar,
   ShoppingBag,
   ArrowRight,
@@ -76,7 +73,7 @@ export default function FinancialInsights({ userId }: FinancialInsightsProps) {
     if (!newBudgetLimit || isNaN(Number(newBudgetLimit))) return;
     
     setIsSavingBudget(true);
-    const { data, error } = await updateUserBudget(userId, {
+    const { data } = await updateUserBudget(userId, {
       monthly_limit: Number(newBudgetLimit),
       currency: selectedCurrency
     });

@@ -14,15 +14,13 @@ import {
   ShoppingCart,
   Package,
   BookOpen,
-  List,
   LogOut,
   User,
   Menu,
   ChefHat,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { subDays } from 'date-fns';
-import Footer from '../components/Footer';
+import { Footer } from '../components/shared';
 import { useInventoryStore } from '../stores/inventoryStore';
 import { fetchInventoryItems } from '../services/inventoryService';
 import { useTransactionStore } from '../stores/transactionStore';
@@ -76,7 +74,6 @@ export default function Dashboard() {
    */
   const inventoryCount = items.length;
   const recipesCount = 0; // TODO: Implement when recipe feature is added
-  const shoppingListCount = 0; // TODO: Implement when shopping list feature is added
 
   /**
    * Handle sign out

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import InventoryItemCard from './InventoryItemCard';
 import InventoryListView from './InventoryListView';
-import type { InventoryItemWithStatus, UUID } from '../types/database';
+import type { InventoryItemWithStatus, UUID } from '../../types/database';
 
 interface InventoryGroupedListProps {
   items: InventoryItemWithStatus[];
