@@ -11,6 +11,10 @@
  * - profiles: User data and preferences
  * - inventory_items: Food items with expiry tracking
  * - recipes: AI and API-sourced recipes
+ * - recipe_ingredients: Individual recipe ingredients
+ * - recipe_instructions: Step-by-step instructions
+ * - user_saved_recipes: Saved/favorited recipes with history
+ * - recipe_tags: Recipe categorization
  * - user_recipes: Saved/favorited recipes
  * - shopping_lists: Shopping list management
  * - shopping_list_items: Items in shopping lists
@@ -72,7 +76,7 @@ export type CookingSkillLevel = "beginner" | "intermediate" | "advanced";
 /**
  * Recipe source types
  */
-export type RecipeSource = "api" | "ai" | "manual";
+export type RecipeSource = "api" | "ai" | "manual" | "user" | "spoonacular";
 
 /**
  * Meal types
@@ -361,18 +365,16 @@ export interface Recipe extends TimestampFields {
   user_id: UUID | null;
   title: string;
   description: string | null;
+  cuisine: string | null;
+  difficulty: RecipeDifficulty;
+  prep_time_minutes: number | null;
+  cook_time_minutes: number | null;
+  total_time_minutes: number | null;
+  servings: number;
+  image_url: string | null;
   source: RecipeSource;
   source_id: string | null;
-  image_url: string | null;
-  prep_time: number; // minutes
-  cook_time: number; // minutes
-  servings: number;
-  difficulty: RecipeDifficulty;
-  cuisine_type: CuisineType | null;
-  meal_type: MealType[];
-  instructions: RecipeInstruction[];
-  ingredients: RecipeIngredient[];
-  nutritional_info: NutritionalInfo | null;
+  is_public: boolean;
 }
 
 /**
@@ -386,18 +388,212 @@ export type RecipeInput = Omit<Recipe, "id" | "created_at" | "updated_at">;
 export type RecipeUpdate = Partial<Omit<RecipeInput, "user_id">>;
 
 /**
+ * Recipe with ingredients and instructions
+ */
+export interface RecipeWithDetails extends Recipe {
+  ingredients: RecipeIngredient[];
+  instructions: RecipeInstruction[];
+  tags: string[];
+}
+
+/**
  * Recipe with computed fields
  */
 export interface RecipeWithMetadata extends Recipe {
-  total_time: number; // prep_time + cook_time
   ingredient_count: number;
   step_count: number;
-  is_favorited?: boolean; // populated when querying with user context
-  user_rating?: number | null; // populated when querying with user context
+  is_favorited?: boolean;
+  user_rating?: number | null;
 }
 
 // ============================================================================
-// TABLE 4: USER_RECIPES
+// TABLE 4: RECIPE_INGREDIENTS
+// ============================================================================
+
+/**
+ * Individual ingredient in a recipe with inventory linking
+ *
+ * Stores ingredients with quantities, units, and optional
+ * links to inventory items for availability checking.
+ *
+ * Primary Key: id
+ * Foreign Keys:
+ *   - recipe_id -> recipes.id
+ *   - inventory_match_id -> inventory_items.id (nullable)
+ */
+export interface RecipeIngredientRow extends CreatedAtField {
+  id: UUID;
+  recipe_id: UUID;
+  name: string;
+  quantity: number;
+  unit: string;
+  is_optional: boolean;
+  notes: string | null;
+  order_index: number;
+  inventory_match_id: UUID | null;
+}
+
+/**
+ * Input type for creating recipe ingredients
+ */
+export type RecipeIngredientInput = Omit<
+  RecipeIngredientRow,
+  "id" | "created_at"
+>;
+
+/**
+ * Partial update type for recipe ingredients
+ */
+export type RecipeIngredientUpdate = Partial<
+  Omit<RecipeIngredientInput, "recipe_id">
+>;
+
+/**
+ * Recipe ingredient with inventory availability
+ */
+export interface RecipeIngredientWithInventory extends RecipeIngredientRow {
+  inventory_available: boolean;
+  inventory_quantity: number | null;
+  inventory_unit: string | null;
+}
+
+// ============================================================================
+// TABLE 5: RECIPE_INSTRUCTIONS
+// ============================================================================
+
+/**
+ * Step-by-step cooking instructions for a recipe
+ *
+ * Ordered instructions with optional duration estimates
+ * for better cooking planning.
+ *
+ * Primary Key: id
+ * Foreign Keys: recipe_id -> recipes.id
+ */
+export interface RecipeInstructionRow extends CreatedAtField {
+  id: UUID;
+  recipe_id: UUID;
+  step_number: number;
+  instruction: string;
+  duration_minutes: number | null;
+}
+
+/**
+ * Input type for creating recipe instructions
+ */
+export type RecipeInstructionInput = Omit<
+  RecipeInstructionRow,
+  "id" | "created_at"
+>;
+
+/**
+ * Partial update type for recipe instructions
+ */
+export type RecipeInstructionUpdate = Partial<
+  Omit<RecipeInstructionInput, "recipe_id">
+>;
+
+// ============================================================================
+// TABLE 6: USER_SAVED_RECIPES
+// ============================================================================
+
+/**
+ * User's saved recipes with personal notes and history
+ *
+ * Junction table tracking which recipes a user has saved,
+ * their ratings, notes, and cooking history.
+ *
+ * Primary Key: id
+ * Foreign Keys: user_id -> profiles.id, recipe_id -> recipes.id
+ * Unique Constraint: (user_id, recipe_id)
+ */
+export interface UserSavedRecipe extends TimestampFields, UserReference {
+  id: UUID;
+  recipe_id: UUID;
+  personal_notes: string | null;
+  rating: number | null;
+  times_cooked: number;
+  last_cooked_at: Timestamp | null;
+  saved_at: Timestamp;
+}
+
+/**
+ * Input type for creating user saved recipes
+ */
+export type UserSavedRecipeInput = Omit<
+  UserSavedRecipe,
+  "id" | "created_at" | "updated_at"
+>;
+
+/**
+ * Partial update type for user saved recipes
+ */
+export type UserSavedRecipeUpdate = Partial<
+  Omit<UserSavedRecipeInput, "user_id" | "recipe_id" | "saved_at">
+>;
+
+/**
+ * User saved recipe with recipe details
+ */
+export interface UserSavedRecipeWithRecipe extends UserSavedRecipe {
+  recipe: Recipe;
+}
+
+// ============================================================================
+// TABLE 7: RECIPE_TAGS
+// ============================================================================
+
+/**
+ * Tags for recipe categorization
+ *
+ * Flexible tagging system for recipes (vegetarian, quick,
+ * breakfast, etc.) enabling tag-based discovery.
+ *
+ * Primary Key: id
+ * Foreign Keys: recipe_id -> recipes.id
+ * Unique Constraint: (recipe_id, tag)
+ */
+export interface RecipeTag extends CreatedAtField {
+  id: UUID;
+  recipe_id: UUID;
+  tag: string;
+}
+
+/**
+ * Input type for creating recipe tags
+ */
+export type RecipeTagInput = Omit<RecipeTag, "id" | "created_at">;
+
+/**
+ * Common recipe tags
+ */
+export const COMMON_RECIPE_TAGS = [
+  "vegetarian",
+  "vegan",
+  "gluten-free",
+  "dairy-free",
+  "quick",
+  "slow-cooker",
+  "air-fryer",
+  "one-pot",
+  "no-bake",
+  "breakfast",
+  "lunch",
+  "dinner",
+  "snack",
+  "dessert",
+  "appetizer",
+  "meal-prep",
+  "budget-friendly",
+  "kid-friendly",
+  "spicy",
+  "mild",
+] as const;
+
+export type CommonRecipeTag = (typeof COMMON_RECIPE_TAGS)[number];
+
+// ============================================================================
+// TABLE 8: USER_RECIPES (LEGACY - KEPT FOR COMPATIBILITY)
 // ============================================================================
 
 /**
@@ -414,7 +610,7 @@ export interface UserRecipe extends CreatedAtField, UserReference {
   id: UUID;
   recipe_id: UUID;
   is_favorite: boolean;
-  rating: number | null; // 1-5
+  rating: number | null;
   notes: string | null;
   cooked_count: number;
   last_cooked_at: Timestamp | null;
@@ -433,7 +629,7 @@ export type UserRecipeUpdate = Partial<
 >;
 
 // ============================================================================
-// TABLE 5: SHOPPING_LISTS
+// TABLE 9: SHOPPING_LISTS
 // ============================================================================
 
 /**
@@ -475,7 +671,7 @@ export interface ShoppingListWithItems extends ShoppingList {
 }
 
 // ============================================================================
-// TABLE 6: SHOPPING_LIST_ITEMS
+// TABLE 10: SHOPPING_LIST_ITEMS
 // ============================================================================
 
 /**
@@ -522,7 +718,7 @@ export interface ShoppingListItemWithRecipe extends ShoppingListItem {
 }
 
 // ============================================================================
-// TABLE 7: RECIPE_HISTORY
+// TABLE 11: RECIPE_HISTORY
 // ============================================================================
 
 /**
@@ -540,8 +736,8 @@ export interface RecipeHistory extends CreatedAtField, UserReference {
   id: UUID;
   recipe_id: UUID;
   action: RecipeAction;
-  rating: number | null; // 1-5, only for 'rated' actions
-  cook_duration: number | null; // actual cooking time in minutes
+  rating: number | null;
+  cook_duration: number | null;
   notes: string | null;
 }
 
@@ -559,7 +755,7 @@ export interface RecipeHistoryWithRecipe extends RecipeHistory {
 }
 
 // ============================================================================
-// TABLE 8: NOTIFICATIONS
+// TABLE 12: NOTIFICATIONS
 // ============================================================================
 
 /**
@@ -608,7 +804,7 @@ export interface NotificationWithDetails extends Notification {
 }
 
 // ============================================================================
-// TABLE 9: GEMINI_REQUESTS
+// TABLE 13: GEMINI_REQUESTS
 // ============================================================================
 
 /**
@@ -647,7 +843,7 @@ export interface GeminiRequestStats {
 }
 
 // ============================================================================
-// TABLE 10: GEMINI_CACHE
+// TABLE 14: GEMINI_CACHE
 // ============================================================================
 
 /**
@@ -661,7 +857,7 @@ export interface GeminiRequestStats {
  */
 export interface GeminiCache extends CreatedAtField {
   id: UUID;
-  cache_key: string; // hash of ingredients/request
+  cache_key: string;
   response: Record<string, unknown>;
   tokens_saved: number;
   hit_count: number;
@@ -688,7 +884,7 @@ export interface GeminiCacheStats {
 }
 
 // ============================================================================
-// TABLE 11: AI_RECIPE_FEEDBACK
+// TABLE 15: AI_RECIPE_FEEDBACK
 // ============================================================================
 
 /**
@@ -708,7 +904,7 @@ export interface AIRecipeFeedback extends CreatedAtField, UserReference {
   recipe_id: UUID;
   gemini_request_id: UUID;
   feedback_type: FeedbackType;
-  rating: number; // 1-5
+  rating: number;
   issues: AIFeedbackIssue[];
   comments: string | null;
 }
@@ -731,7 +927,7 @@ export interface AIRecipeFeedbackStats {
 }
 
 // ============================================================================
-// TABLE 12: SAFETY_FLAGS
+// TABLE 16: SAFETY_FLAGS
 // ============================================================================
 
 /**
@@ -787,7 +983,7 @@ export interface SafetyStats {
 }
 
 // ============================================================================
-// TABLE 13: USER_PREFERENCES
+// TABLE 17: USER_PREFERENCES
 // ============================================================================
 
 /**
@@ -801,12 +997,12 @@ export interface SafetyStats {
  */
 export interface UserPreferences extends TimestampFields {
   id: UUID;
-  user_id: UUID; // unique constraint
+  user_id: UUID;
   dietary_restrictions: DietaryRestriction[];
   allergies: string[];
   disliked_ingredients: string[];
   favorite_cuisines: CuisineType[];
-  spice_tolerance: number; // 1-5
+  spice_tolerance: number;
   cooking_time_preference: CookingTimePreference;
   equipment_available: KitchenEquipment[];
 }
@@ -827,7 +1023,7 @@ export type UserPreferencesUpdate = Partial<
 >;
 
 // ============================================================================
-// TABLE 14: INGREDIENT_SUBSTITUTIONS
+// TABLE 18: INGREDIENT_SUBSTITUTIONS
 // ============================================================================
 
 /**
@@ -846,7 +1042,7 @@ export interface IngredientSubstitution extends CreatedAtField, UserReference {
   original_ingredient: string;
   substitute_ingredient: string;
   reason: string | null;
-  success_rating: number; // 1-5
+  success_rating: number;
   recipe_id: UUID | null;
 }
 
@@ -879,7 +1075,7 @@ export interface SubstitutionSuggestion {
 }
 
 // ============================================================================
-// TABLE 15: USER_BUDGETS
+// TABLE 19: USER_BUDGETS
 // ============================================================================
 
 /**
@@ -896,16 +1092,19 @@ export interface UserBudget extends TimestampFields {
   user_id: UUID;
   monthly_limit: number;
   currency: string;
-  alert_threshold: number; // percentage (e.g. 80)
+  alert_threshold: number;
   rollover_savings: boolean;
   budget_start_day: number;
 }
 
-export type UserBudgetInput = Omit<UserBudget, "id" | "created_at" | "updated_at">;
+export type UserBudgetInput = Omit<
+  UserBudget,
+  "id" | "created_at" | "updated_at"
+>;
 export type UserBudgetUpdate = Partial<UserBudgetInput>;
 
 // ============================================================================
-// TABLE 16: TRANSACTIONS
+// TABLE 20: TRANSACTIONS
 // ============================================================================
 
 /**
@@ -920,16 +1119,19 @@ export type UserBudgetUpdate = Partial<UserBudgetInput>;
 export interface Transaction extends TimestampFields, UserReference {
   id: UUID;
   store_name: string;
-  transaction_date: string; // YYYY-MM-DD
+  transaction_date: string;
   total_amount: number;
   currency: string;
-  category_breakdown: Record<string, number>; // { "dairy": 12.50 }
+  category_breakdown: Record<string, number>;
   receipt_image_path?: string | null;
   is_verified: boolean;
-  source: 'scan' | 'manual' | 'import';
+  source: "scan" | "manual" | "import";
 }
 
-export type TransactionInput = Omit<Transaction, "id" | "created_at" | "updated_at">;
+export type TransactionInput = Omit<
+  Transaction,
+  "id" | "created_at" | "updated_at"
+>;
 export type TransactionUpdate = Partial<Omit<TransactionInput, "user_id">>;
 
 // ============================================================================
@@ -980,7 +1182,7 @@ export function isAIGeneratedRecipe(recipe: Recipe): boolean {
  * Type guard to check if a recipe is from an external API
  */
 export function isAPIRecipe(recipe: Recipe): boolean {
-  return recipe.source === "api";
+  return recipe.source === "api" || recipe.source === "spoonacular";
 }
 
 /**
@@ -1034,7 +1236,7 @@ export function isCriticalSafetyFlag(flag: SafetyFlag): boolean {
  * Calculate total recipe time
  */
 export function calculateTotalTime(recipe: Recipe): number {
-  return recipe.prep_time + recipe.cook_time;
+  return (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
 }
 
 /**
@@ -1081,7 +1283,7 @@ export function getExpiryStatus(
  */
 export function formatRating(rating: number | null): string {
   if (rating === null) return "Not rated";
-  return `${rating}/5 ⭐`;
+  return `${rating}/5`;
 }
 
 /**
@@ -1138,19 +1340,10 @@ export function calculateCompatibilityScore(
 ): number {
   let score = 100;
 
-  // Deduct points for disliked ingredients
-  const recipeIngredients = recipe.ingredients.map((i) =>
-    i.name.toLowerCase()
-  );
-  const disliked = preferences.disliked_ingredients.filter((d) =>
-    recipeIngredients.some((ri) => ri.includes(d.toLowerCase()))
-  );
-  score -= disliked.length * 20;
-
   // Add points for favorite cuisines
   if (
-    recipe.cuisine_type &&
-    preferences.favorite_cuisines.includes(recipe.cuisine_type)
+    recipe.cuisine &&
+    preferences.favorite_cuisines.includes(recipe.cuisine as CuisineType)
   ) {
     score += 10;
   }

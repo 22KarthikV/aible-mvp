@@ -1,8 +1,8 @@
 /**
  * Recipes Page Component for Aible
  *
- * Beautiful recipes page with green harmony theme and glassmorphism design.
- * Features saved recipes, AI-generated recipes, and favorites with empty states.
+ * Complete recipe management with saved recipes, AI-generated recipes, and favorites.
+ * Features search, filtering, and AI recipe generation from inventory.
  */
 
 import { useState } from 'react';
@@ -12,21 +12,69 @@ import {
   Sparkles,
   BookOpen,
   Heart,
-  Star,
   User,
   LogOut,
   Menu,
   ArrowLeft,
-  ChefHat
+  ChefHat,
+  Filter,
+  Plus,
+  Loader2,
 } from 'lucide-react';
 import { Footer } from '../components/shared';
+import {
+  RecipeCard,
+  RecipeDetailModal,
+  AddRecipeModal,
+  RecipeFilters,
+  AIRecipeGenerator,
+  RecipeSearchBar,
+  EmptyRecipes,
+  EmptySearch,
+} from '../components/recipes';
+import { useRecipeStore } from '../stores/recipeStore';
+import type { Recipe, RecipeWithDetails } from '../types/database';
 
 export default function Recipes() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // UI State
   const [activeTab, setActiveTab] = useState<'saved' | 'ai' | 'favorites'>('saved');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState<RecipeWithDetails | null>(null);
+  const [aiGenerating, setAIGenerating] = useState(false);
 
+  // Recipe Store
+  const {
+    filters,
+    loading,
+    setSearchQuery,
+    setSelectedCuisine,
+    setSelectedDifficulty,
+    setSelectedTimeRange,
+    setDietaryTags,
+    clearFilters,
+    getSavedRecipesWithDetails,
+    getFavoriteRecipes,
+    toggleFavorite,
+    saveRecipe,
+    unsaveRecipe,
+    getStats,
+    aiGeneratedRecipes,
+  } = useRecipeStore();
+
+  const savedRecipes = getSavedRecipesWithDetails();
+  const favoriteRecipes = getFavoriteRecipes();
+  const stats = getStats();
+
+  /**
+   * Handle sign out
+   */
   const handleSignOut = async () => {
     const { error } = await signOut();
     if (error) {
@@ -35,6 +83,9 @@ export default function Recipes() {
     }
   };
 
+  /**
+   * Get user's first name
+   */
   const getFirstName = () => {
     if (user?.user_metadata?.full_name) {
       return user.user_metadata.full_name.split(' ')[0];
@@ -45,13 +96,113 @@ export default function Recipes() {
     return 'there';
   };
 
+  /**
+   * Get user's profile picture
+   */
   const getProfilePicture = () => {
     return user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   };
 
-  const handleGenerateRecipe = () => {
-    alert('AI Recipe Generator feature coming soon!');
+  /**
+   * Handle recipe card click
+   */
+  const handleRecipeClick = (recipe: RecipeWithDetails) => {
+    setSelectedRecipe(recipe);
+    setShowDetailModal(true);
   };
+
+  /**
+   * Handle AI recipe generation
+   */
+  const handleAIGenerate = async (params: {
+    ingredients: string[];
+    cuisine?: string;
+    difficulty?: string;
+  }) => {
+    setAIGenerating(true);
+    try {
+      // TODO: Implement actual AI generation with Gemini API
+      console.log('Generating recipe with:', params);
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      alert('AI Recipe Generation coming soon! This will use Google Gemini API to generate personalized recipes.');
+      setShowAIGenerator(false);
+    } catch (error) {
+      console.error('Failed to generate recipe:', error);
+      alert('Failed to generate recipe. Please try again.');
+    } finally {
+      setAIGenerating(false);
+    }
+  };
+
+  /**
+   * Handle add missing ingredients to cart
+   */
+  const handleAddMissingToCart = (ingredients: string[]) => {
+    console.log('Add to cart:', ingredients);
+    alert(`Added ${ingredients.length} ingredients to shopping list! (Feature coming soon)`);
+  };
+
+  /**
+   * Handle save recipe
+   */
+  const handleSaveRecipe = (recipeId: string) => {
+    if (user?.id) {
+      saveRecipe(recipeId, user.id);
+    }
+  };
+
+  /**
+   * Handle unsave recipe
+   */
+  const handleUnsaveRecipe = (recipeId: string) => {
+    if (user?.id) {
+      unsaveRecipe(recipeId, user.id);
+    }
+  };
+
+  /**
+   * Get recipes for current tab
+   * Converts Recipe to RecipeWithDetails by adding default empty arrays
+   */
+  const getCurrentTabRecipes = (): (RecipeWithDetails & { userRecipe?: any })[] => {
+    const toRecipeWithDetails = (recipe: Recipe): RecipeWithDetails => ({
+      ...recipe,
+      ingredients: [],
+      instructions: [],
+      tags: [],
+    });
+
+    switch (activeTab) {
+      case 'saved':
+        return savedRecipes.map((sr) => ({
+          ...toRecipeWithDetails(sr),
+          userRecipe: sr.userRecipe,
+        }));
+      case 'ai':
+        return aiGeneratedRecipes.map((recipe) => ({
+          ...toRecipeWithDetails(recipe),
+          userRecipe: savedRecipes.find((sr) => sr.id === recipe.id)?.userRecipe,
+        }));
+      case 'favorites':
+        return favoriteRecipes.map((fr) => ({
+          ...toRecipeWithDetails(fr),
+          userRecipe: fr.userRecipe,
+        }));
+      default:
+        return [];
+    }
+  };
+
+  const currentRecipes = getCurrentTabRecipes();
+  const hasActiveFilters =
+    filters.searchQuery ||
+    filters.selectedCuisine ||
+    filters.selectedDifficulty ||
+    filters.selectedTimeRange ||
+    filters.dietaryTags.length > 0;
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 relative overflow-x-hidden flex flex-col">
@@ -180,18 +331,27 @@ export default function Recipes() {
               </p>
             </div>
 
-            {/* Generate Recipe Button */}
-            <button
-              onClick={handleGenerateRecipe}
-              className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-emerald-200 animate-fade-in-up animation-delay-200 overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
-              <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
-              <span>Generate Recipe</span>
-            </button>
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="group relative inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-emerald-300 hover:border-emerald-400 text-emerald-700 font-bold rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Add Recipe</span>
+              </button>
+              <button
+                onClick={() => setShowAIGenerator(!showAIGenerator)}
+                className="group relative inline-flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-emerald-200 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
+                <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
+                <span>Generate with AI</span>
+              </button>
+            </div>
           </div>
 
-          {/* Tabs - Refined Glass Style */}
+          {/* Tabs */}
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-1.5 flex overflow-x-auto max-w-full gap-1.5 animate-fade-in-up animation-delay-300 scrollbar-hide">
             <button
               onClick={() => setActiveTab('saved')}
@@ -203,7 +363,7 @@ export default function Recipes() {
             >
               <span className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4" />
-                Saved
+                Saved ({stats.saved})
               </span>
             </button>
             <button
@@ -216,7 +376,7 @@ export default function Recipes() {
             >
               <span className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
-                AI Generated
+                AI Generated ({stats.aiGenerated})
               </span>
             </button>
             <button
@@ -229,50 +389,135 @@ export default function Recipes() {
             >
               <span className="flex items-center gap-2">
                 <Heart className="w-4 h-4" />
-                Favorites
+                Favorites ({stats.favorites})
               </span>
             </button>
           </div>
         </div>
 
-        {/* Empty State - Consistent with Dashboard */}
-        <div className="animate-fade-in-up animation-delay-400">
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-emerald-100 p-12 lg:p-20 text-center shadow-sm hover:shadow-md transition-all duration-500">
-            <div className="relative w-28 h-24 mx-auto mb-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full blur-3xl opacity-20 animate-pulse" />
-              <div className="relative w-24 h-24 bg-emerald-50 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
-                <Sparkles className="w-12 h-12 text-emerald-500 animate-pulse" strokeWidth={2} />
-              </div>
-              <Star className="absolute -top-2 -right-4 w-6 h-6 text-emerald-400 fill-emerald-400 animate-bounce" style={{ animationDuration: '3s' }} />
-              <Star className="absolute -bottom-2 -left-4 w-5 h-5 text-green-400 fill-green-400 animate-bounce" style={{ animationDelay: '1s', animationDuration: '4s' }} />
-            </div>
-
-            <h3 className="text-3xl font-bold text-emerald-900 mb-4">
-              No recipes yet
-            </h3>
-            <p className="text-emerald-700 text-lg mb-10 max-w-2xl mx-auto leading-relaxed font-medium opacity-80">
-              Generate personalized recipes using AI based on your inventory, or save recipes you love from our library.
-            </p>
-
-            <button
-              onClick={handleGenerateRecipe}
-              className="group relative inline-flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold text-lg rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-emerald-200 overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
-              <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
-              <span>Generate with AI</span>
-            </button>
-
-            <div className="mt-12 pt-8 border-t border-emerald-100">
-              <p className="text-sm font-bold text-emerald-600/60 uppercase tracking-widest">
-                Pro Tip: Add more items to your inventory for better matches
-              </p>
-            </div>
+        {/* AI Generator Section */}
+        {showAIGenerator && (
+          <div className="mb-8 animate-fade-in">
+            <AIRecipeGenerator
+              onGenerate={handleAIGenerate}
+              loading={aiGenerating}
+            />
           </div>
-        </div>
-        {/* Footer - Minimal & Integrated */}
+        )}
+
+        {/* Search and Filters */}
+        {!showAIGenerator && (
+          <div className="mb-8 animate-fade-in animation-delay-400">
+            <div className="flex flex-col lg:flex-row gap-4 mb-4">
+              {/* Search Bar */}
+              <div className="flex-1">
+                <RecipeSearchBar
+                  value={filters.searchQuery}
+                  onChange={setSearchQuery}
+                />
+              </div>
+
+              {/* Filter Button */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center justify-center gap-2 px-6 py-3.5 border font-bold rounded-2xl shadow-sm transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-100 whitespace-nowrap ${
+                  showFilters || hasActiveFilters
+                    ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                    : 'bg-white text-emerald-700 border-emerald-200/50 hover:bg-emerald-50 hover:border-emerald-300'
+                }`}
+              >
+                <Filter className="w-5 h-5" />
+                <span>Filters</span>
+                {hasActiveFilters && (
+                  <span className="ml-1 px-2 py-0.5 bg-white/20 text-white text-xs font-bold rounded-full">
+                    Active
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Filters Panel */}
+            {showFilters && (
+              <RecipeFilters
+                selectedCuisine={filters.selectedCuisine}
+                selectedDifficulty={filters.selectedDifficulty}
+                selectedTimeRange={filters.selectedTimeRange}
+                dietaryTags={filters.dietaryTags}
+                onCuisineChange={setSelectedCuisine}
+                onDifficultyChange={setSelectedDifficulty}
+                onTimeRangeChange={setSelectedTimeRange}
+                onDietaryTagsChange={setDietaryTags}
+                onClearFilters={clearFilters}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
+            <Loader2 className="w-12 h-12 text-emerald-600 animate-spin mb-4" />
+            <p className="text-emerald-700 font-semibold">Loading recipes...</p>
+          </div>
+        )}
+
+        {/* Empty State - No Recipes in Tab */}
+        {!loading && !showAIGenerator && currentRecipes.length === 0 && !hasActiveFilters && (
+          <EmptyRecipes
+            type={activeTab}
+            onGenerateClick={() => setShowAIGenerator(true)}
+          />
+        )}
+
+        {/* Empty State - No Search Results */}
+        {!loading && !showAIGenerator && currentRecipes.length === 0 && hasActiveFilters && (
+          <EmptySearch
+            searchQuery={filters.searchQuery}
+            onClearFilters={clearFilters}
+          />
+        )}
+
+        {/* Recipe Grid */}
+        {!loading && !showAIGenerator && currentRecipes.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
+            {currentRecipes.map((item) => (
+              <RecipeCard
+                key={item.id}
+                recipe={item}
+                userRecipe={'userRecipe' in item ? item.userRecipe : undefined}
+                onClick={() => handleRecipeClick(item)}
+                onToggleFavorite={toggleFavorite}
+                showSource={activeTab === 'ai'}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Footer */}
         <Footer />
       </main>
+
+      {/* Modals */}
+      {selectedRecipe && (
+        <RecipeDetailModal
+          isOpen={showDetailModal}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedRecipe(null);
+          }}
+          recipe={selectedRecipe}
+          userRecipe={savedRecipes.find((sr) => sr.id === selectedRecipe.id)?.userRecipe}
+          onToggleFavorite={toggleFavorite}
+          onSaveRecipe={handleSaveRecipe}
+          onUnsaveRecipe={handleUnsaveRecipe}
+          onAddMissingToCart={handleAddMissingToCart}
+        />
+      )}
+
+      <AddRecipeModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+      />
     </div>
   );
 }

@@ -81,7 +81,7 @@ function matchesTimeRange(
 ): boolean {
   if (!range) return true;
 
-  const totalTime = recipe.prep_time + recipe.cook_time;
+  const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
 
   switch (range) {
     case 'under-30':
@@ -260,17 +260,14 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
         (recipe) =>
           recipe.title.toLowerCase().includes(query) ||
           recipe.description?.toLowerCase().includes(query) ||
-          recipe.cuisine_type?.toLowerCase().includes(query) ||
-          recipe.ingredients.some((ing) =>
-            ing.name.toLowerCase().includes(query)
-          )
+          recipe.cuisine?.toLowerCase().includes(query)
       );
     }
 
     // Cuisine filter
     if (filters.selectedCuisine) {
       filtered = filtered.filter(
-        (recipe) => recipe.cuisine_type === filters.selectedCuisine
+        (recipe) => recipe.cuisine === filters.selectedCuisine
       );
     }
 
