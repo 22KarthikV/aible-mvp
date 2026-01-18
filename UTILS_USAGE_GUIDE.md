@@ -5,15 +5,17 @@ Quick reference for using the utilities layer in your React components.
 ## Import Patterns
 
 ### Option 1: Barrel Import (Recommended)
+
 ```typescript
-import { formatCurrency, formatDate, CURRENCIES } from '@/utils';
+import { formatCurrency, formatDate, CURRENCIES } from "@/utils";
 ```
 
 ### Option 2: Direct Import
+
 ```typescript
-import { formatCurrency } from '@/utils/formatters';
-import { formatDate } from '@/utils/dateHelpers';
-import { CURRENCIES } from '@/utils/constants';
+import { formatCurrency } from "@/utils/formatters";
+import { formatDate } from "@/utils/dateHelpers";
+import { CURRENCIES } from "@/utils/constants";
 ```
 
 ## Common Use Cases
@@ -21,38 +23,42 @@ import { CURRENCIES } from '@/utils/constants';
 ### 1. Displaying Currency in Components
 
 **Before** (duplicated logic):
+
 ```typescript
 const price = 1234.56;
-const formatted = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'GBP'
+const formatted = new Intl.NumberFormat("en-GB", {
+  style: "currency",
+  currency: "GBP",
 }).format(price);
 ```
 
 **After** (using utils):
+
 ```typescript
-import { formatCurrency } from '@/utils';
+import { formatCurrency } from "@/utils";
 
 const price = 1234.56;
-const formatted = formatCurrency(price, { currency: 'GBP' });
+const formatted = formatCurrency(price, { currency: "GBP" });
 ```
 
 ### 2. Displaying Expiry Status
 
 **Before** (duplicated logic):
+
 ```typescript
 const getExpiryClass = (date: string) => {
   const days = differenceInDays(new Date(date), new Date());
-  if (days < 0) return 'text-red-500';
-  if (days === 0) return 'text-orange-500';
-  if (days <= 7) return 'text-yellow-500';
-  return 'text-green-500';
+  if (days < 0) return "text-red-500";
+  if (days === 0) return "text-orange-500";
+  if (days <= 7) return "text-yellow-500";
+  return "text-green-500";
 };
 ```
 
 **After** (using utils):
+
 ```typescript
-import { getExpiryStatus, EXPIRY_COLORS } from '@/utils';
+import { getExpiryStatus, EXPIRY_COLORS } from "@/utils";
 
 const expiryStatus = getExpiryStatus(expiryDate);
 const colors = EXPIRY_COLORS[expiryStatus];
@@ -60,68 +66,76 @@ const colors = EXPIRY_COLORS[expiryStatus];
 // Use in JSX
 <div className={`${colors.bg} ${colors.text} ${colors.border}`}>
   {expiryStatus}
-</div>
+</div>;
 ```
 
 ### 3. Formatting Dates Consistently
 
 **Before** (inconsistent):
+
 ```typescript
-const date1 = format(new Date(), 'MMM d, yyyy');
-const date2 = format(new Date(), 'MMMM d, yyyy');
+const date1 = format(new Date(), "MMM d, yyyy");
+const date2 = format(new Date(), "MMMM d, yyyy");
 const date3 = new Date().toLocaleDateString();
 ```
 
 **After** (consistent):
-```typescript
-import { formatDate } from '@/utils';
 
-const date1 = formatDate(new Date(), 'short');    // "Jan 18, 2026"
-const date2 = formatDate(new Date(), 'full');     // "Saturday, January 18, 2026"
-const date3 = formatDate(new Date(), 'datetime'); // "Jan 18, 2026 2:30 PM"
+```typescript
+import { formatDate } from "@/utils";
+
+const date1 = formatDate(new Date(), "short"); // "Jan 18, 2026"
+const date2 = formatDate(new Date(), "full"); // "Saturday, January 18, 2026"
+const date3 = formatDate(new Date(), "datetime"); // "Jan 18, 2026 2:30 PM"
 ```
 
 ### 4. Using Constants in Forms
 
 **Before** (hardcoded):
+
 ```typescript
-const locations = ['Fridge', 'Freezer', 'Pantry', 'Counter'];
+const locations = ["Fridge", "Freezer", "Pantry", "Counter"];
 
 <select>
-  {locations.map(loc => (
+  {locations.map((loc) => (
     <option key={loc} value={loc.toLowerCase()}>
       {loc}
     </option>
   ))}
-</select>
+</select>;
 ```
 
 **After** (using constants):
+
 ```typescript
-import { STORAGE_LOCATIONS, STORAGE_ICONS } from '@/utils';
+import { STORAGE_LOCATIONS, STORAGE_ICONS } from "@/utils";
 
 <select>
-  {STORAGE_LOCATIONS.map(location => (
+  {STORAGE_LOCATIONS.map((location) => (
     <option key={location} value={location}>
       {STORAGE_ICONS[location]} {location}
     </option>
   ))}
-</select>
+</select>;
 ```
 
 ### 5. Displaying Relative Time
 
 **Before** (manual calculation):
+
 ```typescript
 const getTimeAgo = (date: string) => {
-  const days = Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24));
+  const days = Math.floor(
+    (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24)
+  );
   return `${days} days ago`;
 };
 ```
 
 **After** (using utils):
+
 ```typescript
-import { getRelativeTime } from '@/utils';
+import { getRelativeTime } from "@/utils";
 
 const timeAgo = getRelativeTime(purchaseDate);
 // "2 days ago", "just now", "in 3 hours", etc.
@@ -130,22 +144,29 @@ const timeAgo = getRelativeTime(purchaseDate);
 ### 6. Type-Safe Currency Selection
 
 **Before** (string):
+
 ```typescript
-const [currency, setCurrency] = useState('GBP');
+const [currency, setCurrency] = useState("GBP");
 ```
 
 **After** (type-safe):
+
 ```typescript
-import type { Currency } from '@/utils';
-import { CURRENCIES } from '@/utils';
+import type { Currency } from "@/utils";
+import { CURRENCIES } from "@/utils";
 
-const [currency, setCurrency] = useState<Currency>('GBP');
+const [currency, setCurrency] = useState<Currency>("GBP");
 
-<select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)}>
-  {CURRENCIES.map(curr => (
-    <option key={curr} value={curr}>{curr}</option>
+<select
+  value={currency}
+  onChange={(e) => setCurrency(e.target.value as Currency)}
+>
+  {CURRENCIES.map((curr) => (
+    <option key={curr} value={curr}>
+      {curr}
+    </option>
   ))}
-</select>
+</select>;
 ```
 
 ## Component Examples
@@ -159,8 +180,8 @@ import {
   getDaysUntilExpiry,
   EXPIRY_COLORS,
   STORAGE_ICONS,
-  type StorageLocation
-} from '@/utils';
+  type StorageLocation,
+} from "@/utils";
 
 interface InventoryItemCardProps {
   name: string;
@@ -173,7 +194,7 @@ export function InventoryItemCard({
   name,
   expiryDate,
   location,
-  purchaseDate
+  purchaseDate,
 }: InventoryItemCardProps) {
   const expiryStatus = getExpiryStatus(expiryDate);
   const daysLeft = getDaysUntilExpiry(expiryDate);
@@ -188,14 +209,12 @@ export function InventoryItemCard({
       </div>
 
       <div className={`expiry ${colors.bg} ${colors.text} ${colors.border}`}>
-        {expiryStatus === 'expired'
+        {expiryStatus === "expired"
           ? `Expired ${Math.abs(daysLeft)} days ago`
           : `Expires in ${daysLeft} days`}
       </div>
 
-      <div className="date">
-        Purchased: {formatDate(purchaseDate, 'short')}
-      </div>
+      <div className="date">Purchased: {formatDate(purchaseDate, "short")}</div>
     </div>
   );
 }
@@ -208,8 +227,8 @@ import {
   formatCurrency,
   formatPercentage,
   getCurrentMonthRange,
-  type Currency
-} from '@/utils';
+  type Currency,
+} from "@/utils";
 
 interface FinancialDashboardProps {
   totalSpent: number;
@@ -220,7 +239,7 @@ interface FinancialDashboardProps {
 export function FinancialDashboard({
   totalSpent,
   budgetLimit,
-  currency
+  currency,
 }: FinancialDashboardProps) {
   const monthRange = getCurrentMonthRange();
   const spentPercentage = totalSpent / budgetLimit;
@@ -246,7 +265,8 @@ export function FinancialDashboard({
       </div>
 
       <div className="period">
-        Period: {formatDate(monthRange.start, 'short')} - {formatDate(monthRange.end, 'short')}
+        Period: {formatDate(monthRange.start, "short")} -{" "}
+        {formatDate(monthRange.end, "short")}
       </div>
     </div>
   );
@@ -261,8 +281,8 @@ import {
   getTodayISO,
   parseDateSafe,
   type Currency,
-  type TransactionSource
-} from '@/utils';
+  type TransactionSource,
+} from "@/utils";
 
 interface ScannedItem {
   name: string;
@@ -272,11 +292,14 @@ interface ScannedItem {
 
 export function ReceiptReview() {
   const [items, setItems] = useState<ScannedItem[]>([]);
-  const [currency] = useState<Currency>('GBP');
-  const [source] = useState<TransactionSource>('scan');
+  const [currency] = useState<Currency>("GBP");
+  const [source] = useState<TransactionSource>("scan");
   const [purchaseDate] = useState(getTodayISO());
 
-  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const total = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
 
   return (
     <div className="receipt-review">
@@ -302,15 +325,15 @@ export function ReceiptReview() {
               <td>{item.name}</td>
               <td>{item.quantity}</td>
               <td>{formatCurrency(item.price, { currency })}</td>
-              <td>{formatCurrency(item.price * item.quantity, { currency })}</td>
+              <td>
+                {formatCurrency(item.price * item.quantity, { currency })}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div className="total">
-        Total: {formatCurrency(total, { currency })}
-      </div>
+      <div className="total">Total: {formatCurrency(total, { currency })}</div>
     </div>
   );
 }
@@ -328,25 +351,25 @@ import type {
   ExpiryStatus,
   TransactionSource,
   FormatCurrencyOptions,
-  DateFormatType
-} from '@/utils';
+  DateFormatType,
+} from "@/utils";
 
 // Type-safe state
-const [currency, setCurrency] = useState<Currency>('GBP');
-const [category, setCategory] = useState<FoodCategory>('Fruits');
-const [location, setLocation] = useState<StorageLocation>('Fridge');
+const [currency, setCurrency] = useState<Currency>("GBP");
+const [category, setCategory] = useState<FoodCategory>("Fruits");
+const [location, setLocation] = useState<StorageLocation>("Fridge");
 ```
 
 ### Type Guards
 
 ```typescript
-import { CURRENCIES, type Currency } from '@/utils';
+import { CURRENCIES, type Currency } from "@/utils";
 
 function isCurrency(value: string): value is Currency {
   return CURRENCIES.includes(value as Currency);
 }
 
-const userInput = 'GBP';
+const userInput = "GBP";
 if (isCurrency(userInput)) {
   // TypeScript knows userInput is Currency here
   setCurrency(userInput);
@@ -358,15 +381,16 @@ if (isCurrency(userInput)) {
 ### Memoize Formatted Values
 
 ```typescript
-import { useMemo } from 'react';
-import { formatCurrency, getExpiryStatus } from '@/utils';
+import { useMemo } from "react";
+import { formatCurrency, getExpiryStatus } from "@/utils";
 
 function ExpensiveComponent({ items, currency }) {
   const total = useMemo(
-    () => formatCurrency(
-      items.reduce((sum, item) => sum + item.price, 0),
-      { currency }
-    ),
+    () =>
+      formatCurrency(
+        items.reduce((sum, item) => sum + item.price, 0),
+        { currency }
+      ),
     [items, currency]
   );
 
@@ -377,33 +401,34 @@ function ExpensiveComponent({ items, currency }) {
 ### Cache Date Calculations
 
 ```typescript
-import { useMemo } from 'react';
-import { getExpiryStatus, EXPIRY_COLORS } from '@/utils';
+import { useMemo } from "react";
+import { getExpiryStatus, EXPIRY_COLORS } from "@/utils";
 
 function InventoryItem({ expiryDate }) {
-  const expiryInfo = useMemo(() => ({
-    status: getExpiryStatus(expiryDate),
-    get colors() { return EXPIRY_COLORS[this.status]; }
-  }), [expiryDate]);
-
-  return (
-    <div className={expiryInfo.colors.bg}>
-      {expiryInfo.status}
-    </div>
+  const expiryInfo = useMemo(
+    () => ({
+      status: getExpiryStatus(expiryDate),
+      get colors() {
+        return EXPIRY_COLORS[this.status];
+      },
+    }),
+    [expiryDate]
   );
+
+  return <div className={expiryInfo.colors.bg}>{expiryInfo.status}</div>;
 }
 ```
 
 ## Testing Components with Utils
 
 ```typescript
-import { render, screen } from '@testing-library/react';
-import { formatCurrency } from '@/utils';
+import { render, screen } from "@testing-library/react";
+import { formatCurrency } from "@/utils";
 
-describe('PriceDisplay', () => {
-  it('displays formatted price', () => {
+describe("PriceDisplay", () => {
+  it("displays formatted price", () => {
     const price = 1234.56;
-    const expected = formatCurrency(price, { currency: 'GBP' });
+    const expected = formatCurrency(price, { currency: "GBP" });
 
     render(<PriceDisplay amount={price} currency="GBP" />);
 
@@ -417,7 +442,7 @@ describe('PriceDisplay', () => {
 ### Safe Date Handling
 
 ```typescript
-import { parseDateSafe, isValidDate, formatDate } from '@/utils';
+import { parseDateSafe, isValidDate, formatDate } from "@/utils";
 
 function SafeDateDisplay({ dateString }: { dateString: string | null }) {
   if (!isValidDate(dateString)) {
@@ -425,25 +450,29 @@ function SafeDateDisplay({ dateString }: { dateString: string | null }) {
   }
 
   const date = parseDateSafe(dateString);
-  return <span>{date && formatDate(date, 'short')}</span>;
+  return <span>{date && formatDate(date, "short")}</span>;
 }
 ```
 
 ### Conditional Formatting
 
 ```typescript
-import { formatCurrency, formatPercentage, type Currency } from '@/utils';
+import { formatCurrency, formatPercentage, type Currency } from "@/utils";
 
-function ConditionalFormat({ value, type, currency }: {
+function ConditionalFormat({
+  value,
+  type,
+  currency,
+}: {
   value: number;
-  type: 'currency' | 'percentage';
+  type: "currency" | "percentage";
   currency?: Currency;
 }) {
-  if (type === 'currency' && currency) {
+  if (type === "currency" && currency) {
     return <span>{formatCurrency(value, { currency })}</span>;
   }
 
-  if (type === 'percentage') {
+  if (type === "percentage") {
     return <span>{formatPercentage(value)}</span>;
   }
 

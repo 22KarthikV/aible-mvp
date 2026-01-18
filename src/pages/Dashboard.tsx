@@ -18,12 +18,19 @@ import {
   User,
   Menu,
   ChefHat,
+  ChevronRight,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Footer } from '../components/shared';
 import { useInventoryStore } from '../stores/inventoryStore';
 import { fetchInventoryItems } from '../services/inventoryService';
 import { useTransactionStore } from '../stores/transactionStore';
+import {
+  ExpiringSoonWidget,
+  RecentActivityWidget,
+  BudgetOverviewWidget,
+  QuickStatsWidget,
+} from '../components/dashboard';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -236,46 +243,69 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10">
+        {/* Stats Grid - Clickable Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
           {/* Stat Card 1: Items in Inventory - Real-time count from Supabase */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-fade-in-up animation-delay-200 group">
+          <button
+            onClick={() => navigate('/inventory')}
+            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-fade-in-up animation-delay-200 group text-left cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center group-hover:bg-emerald-500 transition-colors duration-300">
                 <Package className="w-6 h-6 text-emerald-600 group-hover:text-white" />
               </div>
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 transition-colors" />
             </div>
             <h3 className="text-3xl font-bold text-gray-900 mb-1">
               {inventoryLoading ? '...' : inventoryCount}
             </h3>
             <p className="text-sm font-medium text-emerald-700">Items in Inventory</p>
-          </div>
+          </button>
 
           {/* Stat Card 2: Recipes Saved - Coming in Sprint 4 */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-fade-in-up animation-delay-300 group">
+          <button
+            onClick={() => navigate('/recipes')}
+            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-fade-in-up animation-delay-300 group text-left cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-500 transition-colors duration-300">
                 <BookOpen className="w-6 h-6 text-blue-600 group-hover:text-white" />
               </div>
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
             </div>
             <h3 className="text-3xl font-bold text-gray-900 mb-1">{recipesCount}</h3>
             <p className="text-sm font-medium text-blue-700">Recipes Saved</p>
-          </div>
+          </button>
 
           {/* Stat Card 3: Shopping Trips (Last 7 Days) */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-fade-in-up animation-delay-400 group">
+          <button
+            onClick={() => navigate('/shopping-list')}
+            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-fade-in-up animation-delay-400 group text-left cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center group-hover:bg-teal-500 transition-colors duration-300">
                 <ShoppingCart className="w-6 h-6 text-teal-600 group-hover:text-white" />
               </div>
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-teal-600 transition-colors" />
             </div>
             <h3 className="text-3xl font-bold text-gray-900 mb-1">{txLoading ? '...' : shoppingTrips}</h3>
             <p className="text-sm font-medium text-teal-700">Shopping Trips (7d)</p>
-          </div>
+          </button>
+        </div>
+
+        {/* Widgets Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-fade-in animation-delay-500">
+          <ExpiringSoonWidget items={items} loading={inventoryLoading} />
+          <RecentActivityWidget items={items} loading={inventoryLoading} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-fade-in animation-delay-600">
+          <BudgetOverviewWidget loading={txLoading} />
+          <QuickStatsWidget items={items} shoppingTrips={shoppingTrips} loading={inventoryLoading || txLoading} />
         </div>
 
         {/* Quick Actions Section */}
-        <div className="mb-10 animate-fade-in animation-delay-500">
+        <div className="mb-10 animate-fade-in animation-delay-700">
           <h3 className="text-xl font-bold text-gray-900 mb-6">
             Quick Actions
           </h3>
@@ -340,32 +370,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Activity Section */}
-        <div className="animate-fade-in animation-delay-1000 mb-12">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">
-            Recent Activity
-          </h3>
-
-          {/* Empty State */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-3xl border border-emerald-100 p-12 text-center shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
-              <Package className="w-8 h-8 text-emerald-500" />
-            </div>
-            <h4 className="text-xl font-bold text-emerald-900 mb-2">
-              No recent activity yet
-            </h4>
-            <p className="text-emerald-700 mb-8 max-w-md mx-auto font-medium">
-              Start by adding items to your inventory or scanning barcodes to track your kitchen items
-            </p>
-            <button
-              onClick={() => navigate('/inventory')}
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:shadow-emerald-500/20 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-emerald-200 cursor-pointer"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Add Your First Item</span>
-            </button>
-          </div>
-        </div>
         {/* Footer - Minimal & Integrated */}
         <Footer />
       </main>
