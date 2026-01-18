@@ -23,7 +23,7 @@ import {
 import { useState, useEffect } from 'react';
 import { Footer } from '../components/shared';
 import { useInventoryStore } from '../stores/inventoryStore';
-import { fetchInventoryItems } from '../services/inventoryService';
+import { fetchInventoryItems, createInventoryItem } from '../services/inventoryService';
 import { useTransactionStore } from '../stores/transactionStore';
 import {
   ExpiringSoonWidget,
@@ -31,15 +31,17 @@ import {
   BudgetOverviewWidget,
   QuickStatsWidget,
 } from '../components/dashboard';
+import BarcodeScannerModal from '../components/scanner/BarcodeScannerModal';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showBarcodeScannerModal, setShowBarcodeScannerModal] = useState(false);
 
   // Inventory Store
-  const { items, setItems, loading: inventoryLoading, setLoading: setInventoryLoading, setError: setInventoryError } = useInventoryStore();
-  
+  const { items, setItems, loading: inventoryLoading, setLoading: setInventoryLoading, setError: setInventoryError, addItem } = useInventoryStore();
+
   // Transaction Store
   const { fetchUserTransactions, getShoppingTripsCount, loading: txLoading } = useTransactionStore();
   const shoppingTrips = getShoppingTripsCount(7);
@@ -116,6 +118,63 @@ export default function Dashboard() {
    */
   const getProfilePicture = () => {
     return user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  };
+
+  /**
+   * Handle barcode scan success
+   * This is called when a barcode is scanned but product is not found
+   */
+  const handleBarcodeScanSuccess = (barcode: string) => {
+    console.log('Barcode scanned:', barcode);
+    // Navigate to inventory page with barcode pre-filled
+    navigate('/inventory', { state: { barcode } });
+  };
+
+  /**
+   * Handle adding scanned product to inventory
+   * This is called when product is found via OpenFoodFacts
+   */
+  const handleAddScannedProduct = async (productData: {
+    name: string;
+    category: string;
+    barcode: string;
+    image_url: string | null;
+  }) => {
+    if (!user?.id) return;
+
+    try {
+      const newItem = {
+        user_id: user.id,
+        name: productData.name,
+        category: productData.category,
+        barcode: productData.barcode,
+        image_url: productData.image_url,
+        quantity: 1,
+        unit: 'piece',
+        location: 'pantry' as const,
+        expiry_date: null,
+        purchase_date: new Date().toISOString(),
+        notes: null,
+      };
+
+      const { data, error } = await createInventoryItem(newItem);
+
+      if (error) {
+        console.error('Error adding item:', error);
+        alert('Failed to add item to inventory');
+        return;
+      }
+
+      if (data && addItem) {
+        addItem(data);
+      }
+
+      // Show success message
+      alert(`Successfully added ${productData.name} to inventory!`);
+    } catch (err) {
+      console.error('Unexpected error adding item:', err);
+      alert('Failed to add item to inventory');
+    }
   };
 
   return (
@@ -328,7 +387,7 @@ export default function Dashboard() {
 
             {/* Action 2: Scan Barcode */}
             <button
-              onClick={() => navigate('/inventory')}
+              onClick={() => setShowBarcodeScannerModal(true)}
               className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-50 p-6 hover:shadow-xl hover:border-blue-400 hover:scale-[1.02] transition-all duration-300 text-left group focus:outline-none focus:ring-4 focus:ring-blue-100 animate-fade-in-up animation-delay-700"
             >
               <div className="w-14 h-14 bg-blue-100 group-hover:bg-blue-500 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110">
@@ -373,6 +432,15 @@ export default function Dashboard() {
         {/* Footer - Minimal & Integrated */}
         <Footer />
       </main>
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        isOpen={showBarcodeScannerModal}
+        onClose={() => setShowBarcodeScannerModal(false)}
+        onScanSuccess={handleBarcodeScanSuccess}
+        onAddProduct={handleAddScannedProduct}
+        userId={user?.id}
+      />
     </div>
   );
 }

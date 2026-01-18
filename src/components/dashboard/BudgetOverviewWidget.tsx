@@ -21,12 +21,12 @@ export function BudgetOverviewWidget({ loading }: BudgetOverviewWidgetProps) {
   const currentMonthStart = startOfMonth(new Date());
   const currentMonthEnd = endOfMonth(new Date());
 
-  const monthlySpending = transactions
-    .filter((tx) => {
-      const txDate = new Date(tx.transaction_date);
-      return txDate >= currentMonthStart && txDate <= currentMonthEnd;
-    })
-    .reduce((sum, tx) => sum + tx.total_amount, 0);
+  const monthlyTransactions = transactions.filter((tx) => {
+    const txDate = new Date(tx.transaction_date);
+    return txDate >= currentMonthStart && txDate <= currentMonthEnd;
+  });
+
+  const monthlySpending = monthlyTransactions.reduce((sum, tx) => sum + tx.total_amount, 0);
 
   // Default budget (user can customize in profile)
   const monthlyBudget = 500; // TODO: Load from user_budgets table
@@ -126,7 +126,7 @@ export function BudgetOverviewWidget({ loading }: BudgetOverviewWidgetProps) {
       {/* Shopping trips */}
       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-4">
         <span className="text-sm text-gray-600">Shopping trips this month</span>
-        <span className="text-lg font-bold text-gray-900">{transactions.length}</span>
+        <span className="text-lg font-bold text-gray-900">{monthlyTransactions.length}</span>
       </div>
 
       {/* View details button */}
