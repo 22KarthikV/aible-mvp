@@ -1,6 +1,6 @@
 import { Edit2, Trash2, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import type { InventoryItemWithStatus, UUID } from '../types/database';
+import type { InventoryItemWithStatus, UUID } from '../../types/database';
 
 interface InventoryListViewProps {
   item: InventoryItemWithStatus;
@@ -14,19 +14,6 @@ export default function InventoryListView({
   onDelete,
 }: InventoryListViewProps) {
   // Determine status color/icon
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'expired':
-        return 'text-red-500 bg-red-50';
-      case 'expiring_soon':
-        return 'text-amber-500 bg-amber-50';
-      default:
-        return 'text-emerald-500 bg-emerald-50';
-    }
-  };
-
-  const statusColor = getStatusColor(item.expiry_status);
-
   return (
     <div className="group flex items-center gap-4 p-3 bg-white/80 backdrop-blur-sm border border-emerald-100/50 hover:border-emerald-300 rounded-xl transition-all duration-200 hover:shadow-md hover:bg-white">
       {/* Status Indicator */}
@@ -84,11 +71,13 @@ export default function InventoryListView({
               {item.expiry_status === 'expiring_soon' && <Clock className="w-3 h-3" />}
               {item.expiry_status === 'fresh' && <CheckCircle className="w-3 h-3" />}
               <span>
-                {item.days_until_expiry < 0 
+                {item.days_until_expiry !== null && item.days_until_expiry < 0
                   ? `${Math.abs(item.days_until_expiry)} days ago`
-                  : item.days_until_expiry === 0 
+                  : item.days_until_expiry === 0
                     ? 'Today'
-                    : `${item.days_until_expiry} days left`}
+                    : item.days_until_expiry !== null
+                      ? `${item.days_until_expiry} days left`
+                      : 'No expiry date'}
               </span>
             </div>
             <span className="text-[10px] text-gray-400">

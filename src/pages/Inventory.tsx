@@ -27,15 +27,18 @@ import {
   Layers,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import Footer from '../components/Footer';
-import InventoryItemCard from '../components/InventoryItemCard';
-import InventoryGroupedList from '../components/InventoryGroupedList';
-import AddInventoryItemModal from '../components/AddInventoryItemModal';
-import EditInventoryItemModal from '../components/EditInventoryItemModal';
-import InventoryFilters from '../components/InventoryFilters';
-import BarcodeScannerModal from '../components/BarcodeScannerModal';
-import ReceiptScannerModal from '../components/ReceiptScannerModal';
-import ReceiptItemReview from '../components/ReceiptItemReview';
+import { Footer } from '../components/shared';
+import {
+  InventoryGroupedList,
+  AddInventoryItemModal,
+  EditInventoryItemModal,
+  InventoryFilters,
+} from '../components/inventory';
+import {
+  BarcodeScannerModal,
+  ReceiptScannerModal,
+  ReceiptItemReview,
+} from '../components/scanner';
 import { useInventoryStore } from '../stores/inventoryStore';
 import {
   fetchInventoryItems,

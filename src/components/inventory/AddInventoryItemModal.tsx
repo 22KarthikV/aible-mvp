@@ -15,8 +15,8 @@ import {
   CATEGORY_OPTIONS,
   UNIT_OPTIONS,
   LOCATION_OPTIONS,
-} from '../schemas/inventorySchemas';
-import type { UUID } from '../types/database';
+} from '../../schemas/inventorySchemas';
+import type { UUID } from '../../types/database';
 
 interface AddInventoryItemModalProps {
   isOpen: boolean;

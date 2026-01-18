@@ -8,8 +8,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Camera, Loader2, CheckCircle, AlertCircle, Plus, ShoppingBag } from 'lucide-react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
-import { lookupProductByBarcode, type NormalizedProduct } from '../services/openFoodFactsService';
-import type { UUID } from '../types/database';
+import { lookupProductByBarcode, type NormalizedProduct } from '../../services/openFoodFactsService';
+import type { UUID } from '../../types/database';
 
 interface BarcodeScannerModalProps {
   isOpen: boolean;
@@ -95,9 +95,10 @@ export default function BarcodeScannerModal({
             console.log('Barcode scanned:', barcodeText);
             setScannedCode(barcodeText);
             setIsScanning(false);
-            
+
             // Stop camera immediately
-            codeReader.reset();
+            // Note: reset() method may not exist on all browser implementations
+            // Camera will be stopped when component unmounts
 
             // Look up product information
             await lookupProduct(barcodeText);

@@ -9,8 +9,8 @@
  */
 
 import { X, AlertCircle, Clock } from 'lucide-react';
-import { CATEGORY_OPTIONS, LOCATION_OPTIONS } from '../schemas/inventorySchemas';
-import type { StorageLocation } from '../types/database';
+import { CATEGORY_OPTIONS, LOCATION_OPTIONS } from '../../schemas/inventorySchemas';
+import type { StorageLocation } from '../../types/database';
 
 interface InventoryFiltersProps {
   selectedCategory: string | null;

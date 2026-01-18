@@ -19,7 +19,7 @@ import {
   processReceiptImage,
   imageFileToBase64,
   type ParsedReceipt,
-} from '../services/receiptOCRService';
+} from '../../services/receiptOCRService';
 
 interface ReceiptScannerModalProps {
   isOpen: boolean;

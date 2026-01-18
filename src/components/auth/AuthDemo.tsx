@@ -11,7 +11,7 @@
  * You can use this as a reference or starter template for your own components.
  */
 
-import { useAuth } from "../lib/auth";
+import { useAuth } from "../../lib/auth";
 
 function AuthDemo() {
   const { user, session, loading, signInWithGoogle, signOut } = useAuth();

@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { differenceInDays, subDays } from 'date-fns';
-import Footer from '../components/Footer';
+import { Footer } from '../components/shared';
 import { useInventoryStore } from '../stores/inventoryStore';
 import { fetchInventoryItems } from '../services/inventoryService';
 import { useTransactionStore } from '../stores/transactionStore';

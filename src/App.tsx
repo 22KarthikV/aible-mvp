@@ -7,8 +7,8 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './lib/auth';
-import ProtectedRoute from './components/ProtectedRoute';
-import ScrollToTop from './components/ScrollToTop';
+import { ProtectedRoute } from './components/auth';
+import { ScrollToTop } from './components/shared';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
