@@ -24,48 +24,55 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { differenceInDays, subDays } from 'date-fns';
-import Footer from '../components/Footer';
+import { Footer } from '../components/shared';
 import { useInventoryStore } from '../stores/inventoryStore';
 import { fetchInventoryItems } from '../services/inventoryService';
+import { useTransactionStore } from '../stores/transactionStore';
+import FinancialInsights from '../components/profile/FinancialInsights';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [imageError, setImageError] = useState<{ [key: string]: boolean }>({});
+  const [activeTab, setActiveTab] = useState<'account' | 'finance'>('account');
 
-  // Get inventory state from Zustand store
-  const { items, setItems, loading, setLoading, setError } = useInventoryStore();
+  // Stores
+  const { items, setItems, loading: inventoryLoading, setLoading: setInventoryLoading, setError: setInventoryError } = useInventoryStore();
+  const { fetchUserTransactions, getShoppingTripsCount, loading: txLoading } = useTransactionStore();
+  
+  const shoppingTripsLast7Days = getShoppingTripsCount(7);
 
   /**
-   * Fetch real-time inventory data from Supabase
-   * Runs on component mount and caches result in Zustand store
+   * Fetch real-time inventory and transaction data
    */
   useEffect(() => {
-    const loadInventoryData = async () => {
+    const loadData = async () => {
       if (!user?.id) return;
 
-      // Only fetch if we don't have cached data
-      if (items.length === 0 && !loading) {
-        setLoading(true);
+      // Load Inventory
+      if (items.length === 0 && !inventoryLoading) {
+        setInventoryLoading(true);
         try {
           const { data: fetchedItems, error: fetchError } = await fetchInventoryItems(user.id);
           if (fetchError) {
-            setError(fetchError);
+            setInventoryError(fetchError);
           } else if (fetchedItems) {
             setItems(fetchedItems);
           }
         } catch (err) {
           console.error('Failed to fetch inventory data:', err);
-          setError('Failed to load inventory data');
         } finally {
-          setLoading(false);
+          setInventoryLoading(false);
         }
       }
+
+      // Load Transactions (Cached)
+      await fetchUserTransactions(user.id);
     };
 
-    loadInventoryData();
-  }, [user?.id, items.length, loading, setItems, setLoading, setError]);
+    loadData();
+  }, [user?.id, items.length, inventoryLoading, setItems, setInventoryLoading, setInventoryError, fetchUserTransactions]);
 
   /**
    * Calculate real-time stats from inventory data
@@ -262,12 +269,50 @@ export default function Profile() {
 
       {/* Main Content */}
       <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 relative z-10">
-        <div className="mb-8 animate-fade-in">
-          <h2 className="text-2xl sm:text-3xl font-bold text-emerald-900 mb-2 animate-slide-in-left">Profile</h2>
-          <p className="text-emerald-700 animate-slide-in-left animation-delay-100 font-medium">Manage your account settings and preferences</p>
+        {/* Page Header & Tabs */}
+        <div className="mb-8 animate-fade-in space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-900 mb-2 animate-slide-in-left">
+                {activeTab === 'account' ? 'My Profile' : 'Financial Health'}
+              </h2>
+              <p className="text-emerald-700 font-medium opacity-80">
+                {activeTab === 'account' 
+                  ? 'Manage your account settings and preferences' 
+                  : 'Track your spending, budget, and savings habits'}
+              </p>
+            </div>
+            
+            {/* Tabs */}
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-1.5 flex gap-1 shadow-sm border border-emerald-100 w-full sm:w-auto animate-fade-in-up">
+              <button
+                onClick={() => setActiveTab('account')}
+                className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                  activeTab === 'account' 
+                    ? 'bg-white text-emerald-700 shadow-sm border border-emerald-100' 
+                    : 'text-emerald-600/70 hover:bg-emerald-50/50'
+                }`}
+              >
+                Account
+              </button>
+              <button
+                onClick={() => setActiveTab('finance')}
+                className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                  activeTab === 'finance' 
+                    ? 'bg-white text-emerald-700 shadow-sm border border-emerald-100' 
+                    : 'text-emerald-600/70 hover:bg-emerald-50/50'
+                }`}
+              >
+                Financial Insights
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {activeTab === 'finance' && user ? (
+          <FinancialInsights userId={user.id} />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
           {/* Left Column: Profile Card & Quick Actions */}
           <div className="lg:col-span-2 space-y-8 animate-fade-in-up animation-delay-200">
@@ -418,7 +463,7 @@ export default function Profile() {
                     <div className="bg-white rounded-2xl p-4 border border-emerald-50 shadow-sm hover:shadow-md hover:border-emerald-200 hover:-translate-y-1 transition-all duration-300">
                       <p className="text-xs text-emerald-500 font-bold uppercase tracking-tight mb-1">Total Items</p>
                       <div className="flex items-end gap-1">
-                        <span className="text-2xl font-bold text-emerald-900">{loading ? '...' : inventoryCount}</span>
+                        <span className="text-2xl font-bold text-emerald-900">{inventoryLoading ? '...' : inventoryCount}</span>
                         <span className="text-xs text-emerald-400 font-medium mb-1">items</span>
                       </div>
                     </div>
@@ -469,7 +514,7 @@ export default function Profile() {
                          <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Last 7 days</p>
                       </div>
                     </div>
-                    <span className="text-xl font-bold text-emerald-700">{loading ? '...' : itemsAddedLast7Days}</span>
+                    <span className="text-xl font-bold text-emerald-700">{inventoryLoading ? '...' : itemsAddedLast7Days}</span>
                   </div>
 
                   {/* Activity Item 2 - Recipes Created (Coming in Sprint 4) */}
@@ -497,7 +542,7 @@ export default function Profile() {
                          <p className="text-[10px] font-bold text-teal-500 uppercase tracking-widest">Last 7 days</p>
                       </div>
                     </div>
-                    <span className="text-xl font-bold text-teal-700">0</span>
+                    <span className="text-xl font-bold text-teal-700">{txLoading ? '...' : shoppingTripsLast7Days}</span>
                   </div>
                 </div>
 
@@ -527,7 +572,8 @@ export default function Profile() {
              </div>
 
           </div>
-        </div>
+          </div>
+        )}
 
         {/* Footer - Minimal & Integrated */}
         <Footer />

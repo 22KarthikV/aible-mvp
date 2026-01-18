@@ -16,8 +16,8 @@ import {
   Clock,
   CheckCircle,
 } from 'lucide-react';
-import type { InventoryItemWithStatus } from '../types/database';
-import { getLocationLabel, getLocationIcon } from '../schemas/inventorySchemas';
+import type { InventoryItemWithStatus } from '../../types/database';
+import { getLocationLabel, getLocationIcon } from '../../schemas/inventorySchemas';
 import { format, formatDistanceToNow } from 'date-fns';
 
 interface InventoryItemCardProps {

@@ -5,7 +5,7 @@
  * Uses Google Vision API to extract item information from receipts.
  */
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   X,
   Camera,
@@ -19,7 +19,7 @@ import {
   processReceiptImage,
   imageFileToBase64,
   type ParsedReceipt,
-} from '../services/receiptOCRService';
+} from '../../services/receiptOCRService';
 
 interface ReceiptScannerModalProps {
   isOpen: boolean;
@@ -43,27 +43,49 @@ export default function ReceiptScannerModal({
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   /**
+   * Initialize camera when entering camera mode
+   */
+  useEffect(() => {
+    let mediaStream: MediaStream | null = null;
+
+    const initCamera = async () => {
+      if (mode === 'camera' && videoRef.current && !stream) {
+        try {
+          setError(null);
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: 1280, height: 720 },
+          });
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = mediaStream;
+            setStream(mediaStream);
+            setIsCameraActive(true);
+          }
+        } catch (err) {
+          console.error('Error accessing camera:', err);
+          setError(
+            'Failed to access camera. Please check permissions or try uploading an image instead.'
+          );
+          setMode('select'); // Go back on error
+        }
+      }
+    };
+
+    initCamera();
+
+    return () => {
+      // Cleanup stream if component unmounts or mode changes away from camera
+      if (mode !== 'camera' && mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [mode]);
+
+  /**
    * Start camera for capturing receipt photo
    */
-  const startCamera = async () => {
-    try {
-      setError(null);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: 1280, height: 720 },
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        setStream(mediaStream);
-        setIsCameraActive(true);
-        setMode('camera');
-      }
-    } catch (err) {
-      console.error('Error accessing camera:', err);
-      setError(
-        'Failed to access camera. Please check permissions or try uploading an image instead.'
-      );
-    }
+  const startCamera = () => {
+    setMode('camera');
   };
 
   /**
@@ -73,6 +95,9 @@ export default function ReceiptScannerModal({
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setIsCameraActive(false);
   };

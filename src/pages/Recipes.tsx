@@ -19,7 +19,7 @@ import {
   ArrowLeft,
   ChefHat
 } from 'lucide-react';
-import Footer from '../components/Footer';
+import { Footer } from '../components/shared';
 
 export default function Recipes() {
   const { user, signOut } = useAuth();

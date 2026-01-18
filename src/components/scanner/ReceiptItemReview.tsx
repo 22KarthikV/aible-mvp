@@ -16,14 +16,14 @@ import {
   Calendar,
   Package,
 } from 'lucide-react';
-import type { ParsedReceipt, ReceiptItem } from '../services/receiptOCRService';
-import type { StorageLocation, UUID } from '../types/database';
-import type { CreateInventoryItemFormData } from '../schemas/inventorySchemas';
+import type { ParsedReceipt, ReceiptItem } from '../../services/receiptOCRService';
+import type { StorageLocation, UUID } from '../../types/database';
+import type { CreateInventoryItemFormData } from '../../schemas/inventorySchemas';
 import {
   LOCATION_OPTIONS,
   CATEGORY_OPTIONS,
   UNIT_OPTIONS,
-} from '../schemas/inventorySchemas';
+} from '../../schemas/inventorySchemas';
 
 interface ReceiptItemReviewProps {
   isOpen: boolean;

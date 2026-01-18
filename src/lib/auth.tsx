@@ -210,12 +210,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
 
+      /**
+       * Get redirect URL with fallback chain:
+       * 1. VITE_REDIRECT_URL (set in Vercel env vars for production)
+       * 2. window.location.origin (works for most cases)
+       *
+       * IMPORTANT FOR PRODUCTION: Add your deployment URL to Supabase dashboard:
+       * Supabase → Authentication → URL Configuration → Redirect URLs
+       * Example: https://aible-mvp.vercel.app
+       */
+      const redirectUrl =
+        import.meta.env.VITE_REDIRECT_URL || window.location.origin;
+      const fullRedirectUrl = `${redirectUrl}/`;
+
+      // Log for debugging OAuth issues
+      console.log("[Auth] Google OAuth redirect URL:", fullRedirectUrl);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           // Redirect URL - where Google sends the user after authentication
           // Make sure this URL is added to your Supabase Auth settings
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: fullRedirectUrl,
 
           // Optional: Request specific scopes from Google
           // scopes: "email profile",
@@ -338,6 +354,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
  * }
  * ```
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
 

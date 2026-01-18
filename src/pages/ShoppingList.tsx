@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Footer from '../components/Footer';
+import { Footer } from '../components/shared';
 
 interface ShoppingItem {
   id: string;

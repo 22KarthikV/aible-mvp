@@ -8,21 +8,22 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Plus, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   createInventoryItemSchema,
   type CreateInventoryItemFormData,
   CATEGORY_OPTIONS,
   UNIT_OPTIONS,
   LOCATION_OPTIONS,
-} from '../schemas/inventorySchemas';
-import type { UUID } from '../types/database';
+} from '../../schemas/inventorySchemas';
+import type { UUID } from '../../types/database';
 
 interface AddInventoryItemModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (data: CreateInventoryItemFormData & { user_id: UUID }) => Promise<void>;
   userId: UUID;
+  initialData?: Partial<CreateInventoryItemFormData> | null;
 }
 
 export default function AddInventoryItemModal({
@@ -30,6 +31,7 @@ export default function AddInventoryItemModal({
   onClose,
   onAdd,
   userId,
+  initialData,
 }: AddInventoryItemModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -53,6 +55,24 @@ export default function AddInventoryItemModal({
       notes: null,
     },
   });
+
+  // Reset form with initial data when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      reset({
+        name: initialData?.name || '',
+        category: initialData?.category || '',
+        quantity: initialData?.quantity || 1,
+        unit: initialData?.unit || 'piece',
+        location: initialData?.location || 'fridge',
+        expiry_date: initialData?.expiry_date || null,
+        purchase_date: initialData?.purchase_date || new Date().toISOString().split('T')[0],
+        barcode: initialData?.barcode || null,
+        image_url: initialData?.image_url || null,
+        notes: initialData?.notes || null,
+      });
+    }
+  }, [isOpen, initialData, reset]);
 
   /**
    * Handle form submission

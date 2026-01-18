@@ -14,62 +14,69 @@ import {
   ShoppingCart,
   Package,
   BookOpen,
-  List,
   LogOut,
   User,
   Menu,
   ChefHat,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import Footer from '../components/Footer';
+import { Footer } from '../components/shared';
 import { useInventoryStore } from '../stores/inventoryStore';
 import { fetchInventoryItems } from '../services/inventoryService';
+import { useTransactionStore } from '../stores/transactionStore';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  // Get inventory state from Zustand store
-  const { items, setItems, loading, setLoading, setError } = useInventoryStore();
+  // Inventory Store
+  const { items, setItems, loading: inventoryLoading, setLoading: setInventoryLoading, setError: setInventoryError } = useInventoryStore();
+  
+  // Transaction Store
+  const { fetchUserTransactions, getShoppingTripsCount, loading: txLoading } = useTransactionStore();
+  const shoppingTrips = getShoppingTripsCount(7);
 
   /**
-   * Fetch real-time inventory count from Supabase
-   * Runs on component mount and caches result in Zustand store
+   * Fetch real-time data
    */
   useEffect(() => {
-    const loadInventoryCount = async () => {
+    const loadData = async () => {
       if (!user?.id) return;
 
-      // Only fetch if we don't have cached data
-      if (items.length === 0 && !loading) {
-        setLoading(true);
+      // Load Inventory (uses its own internal check usually, but here we check length)
+      if (items.length === 0 && !inventoryLoading) {
+        setInventoryLoading(true);
         try {
           const { data: fetchedItems, error: fetchError } = await fetchInventoryItems(user.id);
           if (fetchError) {
-            setError(fetchError);
+            setInventoryError(fetchError);
           } else if (fetchedItems) {
             setItems(fetchedItems);
           }
         } catch (err) {
           console.error('Failed to fetch inventory count:', err);
-          setError('Failed to load inventory data');
+          setInventoryError('Failed to load inventory data');
         } finally {
-          setLoading(false);
+          setInventoryLoading(false);
         }
       }
+
+      // Load Transactions (Cached)
+      await fetchUserTransactions(user.id);
     };
 
-    loadInventoryCount();
-  }, [user?.id, items.length, loading, setItems, setLoading, setError]);
+    loadData();
+  }, [user?.id, items.length, inventoryLoading, setItems, setInventoryLoading, setInventoryError, fetchUserTransactions]);
 
   /**
    * Calculate real-time stats from inventory data
-   * Uses cached data from Zustand store for performance
    */
   const inventoryCount = items.length;
   const recipesCount = 0; // TODO: Implement when recipe feature is added
-  const shoppingListCount = 0; // TODO: Implement when shopping list feature is added
+
+  /**
+   * Handle sign out
 
   /**
    * Handle sign out
@@ -239,7 +246,7 @@ export default function Dashboard() {
               </div>
             </div>
             <h3 className="text-3xl font-bold text-gray-900 mb-1">
-              {loading ? '...' : inventoryCount}
+              {inventoryLoading ? '...' : inventoryCount}
             </h3>
             <p className="text-sm font-medium text-emerald-700">Items in Inventory</p>
           </div>
@@ -255,15 +262,15 @@ export default function Dashboard() {
             <p className="text-sm font-medium text-blue-700">Recipes Saved</p>
           </div>
 
-          {/* Stat Card 3: Shopping List Items - Coming in Sprint 6 */}
+          {/* Stat Card 3: Shopping Trips (Last 7 Days) */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-emerald-100 p-6 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 animate-fade-in-up animation-delay-400 group">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center group-hover:bg-orange-500 transition-colors duration-300">
-                <List className="w-6 h-6 text-orange-600 group-hover:text-white" />
+              <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center group-hover:bg-teal-500 transition-colors duration-300">
+                <ShoppingCart className="w-6 h-6 text-teal-600 group-hover:text-white" />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-1">{shoppingListCount}</h3>
-            <p className="text-sm font-medium text-orange-700">Shopping List Items</p>
+            <h3 className="text-3xl font-bold text-gray-900 mb-1">{txLoading ? '...' : shoppingTrips}</h3>
+            <p className="text-sm font-medium text-teal-700">Shopping Trips (7d)</p>
           </div>
         </div>
 
